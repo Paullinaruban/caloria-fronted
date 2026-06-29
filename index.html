@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffeaf3" />
+  <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
+  <title>Caloria — The most accurate AI calorie counting platform for women</title>
+  <meta name="description" content="Snap a photo, get precise calories and macros powered by AI + the USDA database. Personalized meal plans. Made by fitness influencer Paullina Ruban." />
+
+  <!-- App icon system (Caloria mascot) -->
+  <link rel="icon" href="/favicon.ico?v=1" sizes="any" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/icon-16.png?v=1" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32.png?v=1" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png?v=1" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=1" />
+  <link rel="manifest" href="/manifest.json?v=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Caloria" />
+  <meta name="mobile-web-app-capable" content="yes" />
+
+  <link rel="stylesheet" href="css/fonts.css" />
+  <link rel="stylesheet" href="css/styles.css?v=27" />
+</head>
+<body>
+
+  <!-- ======================= PUBLIC SITE ======================= -->
+  <div id="site">
+    <header class="nav glass">
+      <a class="brand" href="#" data-scroll="top">
+        <span class="brand-mark">◍</span><span class="brand-name">Caloria</span>
+      </a>
+      <nav class="nav-links">
+        <button data-scroll="how">How it works</button>
+        <button data-scroll="features">Features</button>
+        <button data-scroll="method">Method</button>
+        <button data-scroll="founder">Founder</button>
+        <button data-scroll="pricing">Pricing</button>
+      </nav>
+      <div class="nav-cta">
+        <button class="btn btn-ghost btn-sm" data-auth="login">Log in</button>
+        <button class="btn btn-primary btn-sm" data-auth="signup">Join The Club</button>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <span class="pill">✦ A Private Wellness Club for Women</span>
+          <h1>Your AI Coach for <em>Nutrition, Training &amp; Results</em></h1>
+          <p class="lede">
+            Join the <b>Supermodel Wellness Club</b> — an exclusive members-only community where women
+            transform together. Inside you get AI nutrition coaching, personalized meal &amp; training
+            plans, progress tracking and the support of women on the same journey.
+          </p>
+          <ul class="hero-highlights">
+            <li>✓ Personalized nutrition &amp; meal plans for your goals</li>
+            <li>✓ Personalized training — gym or home, every level</li>
+            <li>✓ Your AI Supermodel Coach, available 24/7</li>
+            <li>✓ A private community of women supporting each other</li>
+            <li>✓ Progress tracking, accountability &amp; real transformation</li>
+          </ul>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-lg" data-auth="signup">Join The Club</button>
+            <button class="btn btn-ghost btn-lg" data-scroll="how">See how it works</button>
+          </div>
+          <div class="hero-trust">
+            <div class="stars">★★★★★</div>
+            <span>Loved by <strong>12,000+</strong> women building strength &amp; healthy habits</span>
+          </div>
+        </div>
+
+        <div class="hero-art">
+          <div class="phone glass-strong">
+            <div class="phone-cam"></div>
+            <div class="phone-screen">
+              <div class="ps-photo">🥗</div>
+              <div class="ps-card glass">
+                <div class="ps-top"><span class="ps-cal">418</span><span class="ps-kcal">kcal</span><span class="ps-conf">92%</span></div>
+                <div class="ps-macros">
+                  <div><b>32g</b><span>Protein</span></div>
+                  <div><b>41g</b><span>Carbs</span></div>
+                  <div><b>14g</b><span>Fats</span></div>
+                </div>
+                <div class="ps-bars"><i style="--w:78%"></i><i style="--w:55%" class="c"></i><i style="--w:40%" class="f"></i></div>
+              </div>
+            </div>
+          </div>
+          <div class="float-chip chip-1 glass">🔥 Fiber 6g</div>
+          <div class="float-chip chip-2 glass">🧂 Sodium 480mg</div>
+          <div class="hero-mascot">
+            <img src="/assets/hero-mascot-cut.png?v=1" alt="Caloria — your AI wellness coach" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAIN POINTS -->
+    <section class="band-pain">
+      <h2 class="section-title">Sound familiar?</h2>
+      <div class="pain-grid">
+        <div class="pain glass"><span>😮‍💨</span><p>Tired of <b>guessing calories?</b></p></div>
+        <div class="pain glass"><span>🥦</span><p>Tired of <b>restrictive diets?</b></p></div>
+        <div class="pain glass"><span>🔁</span><p>Tired of <b>starting over every Monday?</b></p></div>
+        <div class="pain glass"><span>⏳</span><p>Tired of <b>hours spent tracking food?</b></p></div>
+      </div>
+      <p class="band-pain-cta">Caloria fixes all four — in one photo.</p>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how" class="section">
+      <h2 class="section-title">How the Club works</h2>
+      <p class="section-sub">From welcome to transformation — together.</p>
+      <div class="steps">
+        <div class="step glass"><div class="step-n">1</div><div class="step-emoji">👑</div><h3>Join the Club</h3><p>Create your profile and set your wellness goals in a luxury assessment.</p></div>
+        <div class="step glass"><div class="step-n">2</div><div class="step-emoji">🗓️</div><h3>Get your plans</h3><p>Receive personalized nutrition and training plans built for you.</p></div>
+        <div class="step glass"><div class="step-n">3</div><div class="step-emoji">📸</div><h3>Track with AI</h3><p>Scan meals with the AI calorie scanner and log your day.</p></div>
+        <div class="step glass"><div class="step-n">4</div><div class="step-emoji">💬</div><h3>Coach support</h3><p>Get guidance any time from your AI Supermodel Coach.</p></div>
+        <div class="step glass"><div class="step-n">5</div><div class="step-emoji">🤝</div><h3>Share with the community</h3><p>Post progress, celebrate wins and cheer each other on.</p></div>
+        <div class="step glass"><div class="step-n">6</div><div class="step-emoji">✨</div><h3>Transform your lifestyle</h3><p>Build lasting habits through the Paullina Ruban Method.</p></div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features" class="section">
+      <h2 class="section-title">Everything inside the Club</h2>
+      <div class="feature-grid">
+        <div class="feature glass"><span class="fi">📷</span><h3>AI Calorie Scanner</h3><p>Snap a photo and our AI analyzes your meal — calories, protein, carbs and fats — fast and accurate.</p></div>
+        <div class="feature glass"><span class="fi">🥗</span><h3>Personalized Meal Plans</h3><p>Customized to your goals, lifestyle &amp; dietary preferences, with weekly planning and flexible eating.</p></div>
+        <div class="feature glass"><span class="fi">💪</span><h3>Personalized Training Plans</h3><p>Built around your routine and schedule — gym or home workouts that adapt over time.</p></div>
+        <div class="feature glass"><span class="fi">💬</span><h3>AI Supermodel Coach</h3><p>Your personal coach 24/7 for nutrition, fitness, motivation, habits, consistency &amp; accountability.</p></div>
+        <div class="feature glass feature-hero"><span class="fi">🤝</span><h3>Community Feed</h3><p>Share progress, meals, recipes &amp; transformations. Like, comment and support each other — community is the heart of the Club.</p></div>
+        <div class="feature glass"><span class="fi">📈</span><h3>Progress Tracking</h3><p>Daily targets, meal history, level badges &amp; milestones — watch your transformation unfold.</p></div>
+      </div>
+    </section>
+
+    <!-- FOUNDER -->
+    <section id="founder" class="section founder">
+      <div class="founder-card glass-strong">
+        <div class="founder-photo">
+          <img class="founder-img" src="assets/founder.jpg" alt="Paullina Ruban — Founder"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='grid';"/>
+          <div class="photo-ph" style="display:none">📷<span>Paullina Ruban</span></div>
+        </div>
+        <div class="founder-copy">
+          <span class="pill pill-aqua">Founder</span>
+          <h2>Created by fitness &amp; wellness influencer Paullina Ruban</h2>
+          <p class="founder-quote">"Helping girls build healthy habits without restriction."</p>
+          <p>
+            I spent years watching women I love fall into the same trap — crash diets, guilt,
+            and starting over every Monday. I built Caloria to be the opposite: an app that gives
+            you the <b>truth about your food</b> in seconds, then helps you build a plan you can
+            actually live with. No restriction. No shame. Just clarity.
+          </p>
+          <p class="founder-sign">— Paullina Ruban · Founder, Supermodel Wellness Club</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- METHOD -->
+    <section id="method" class="section method">
+      <h2 class="section-title">The Paullina Ruban Method</h2>
+      <p class="section-sub">Real results come from consistency, accountability &amp; community — not punishment.</p>
+      <div class="method-grid">
+        <div class="method-card glass"><span class="mi">🏋️‍♀️</span><h3>Training philosophy</h3><p>Progressive, glute-focused strength training that builds a lean, feminine shape. Quality reps over endless cardio.</p></div>
+        <div class="method-card glass"><span class="mi">🥗</span><h3>Nutrition philosophy</h3><p>Balanced, protein-forward eating with room for the foods you love. No banned lists, no guilt.</p></div>
+        <div class="method-card glass"><span class="mi">🌱</span><h3>Sustainable fat loss</h3><p>A gentle, livable calorie deficit you can actually stick to — so the results last.</p></div>
+        <div class="method-card glass"><span class="mi">💗</span><h3>Healthy relationship with food</h3><p>Food is fuel and joy, not a moral test. We track to learn, never to restrict.</p></div>
+        <div class="method-card glass"><span class="mi">📈</span><h3>Long-term transformation</h3><p>Small, consistent habits compound. We build the body and the mindset together — for good.</p></div>
+        <div class="method-card glass"><span class="mi">👯‍♀️</span><h3>Community support</h3><p>You are never doing this alone. Inside the Club, women share wins, recipes and progress — and grow together.</p></div>
+        <div class="method-values glass-strong">
+          <h4>What we're about</h4>
+          <ul><li>✓ Sustainable fat loss</li><li>✓ Lean feminine physique</li><li>✓ Glute growth</li><li>✓ Consistency over perfection</li></ul>
+          <h4>What we avoid</h4>
+          <ul class="avoid"><li>✗ Crash diets</li><li>✗ Extreme restriction</li><li>✗ Toxic fitness culture</li><li>✗ Unrealistic promises</li></ul>
+        </div>
+      </div>
+      <p class="method-quote">"Results happen faster when women grow together inside a supportive community."</p>
+    </section>
+
+    <!-- PRICING -->
+    <section id="pricing" class="section">
+      <h2 class="section-title">Simple, premium pricing</h2>
+      <p class="section-sub">Start free. Upgrade when you're ready for the full platform.</p>
+
+      <div class="bill-toggle">
+        <button class="bt-opt active" data-interval="monthly">Monthly</button>
+        <button class="bt-opt" data-interval="yearly">Yearly <span class="save">save 58%</span></button>
+      </div>
+
+      <div class="plans">
+        <div class="plan plan-premium glass-strong">
+          <span class="plan-badge">Most popular</span>
+          <h3>Premium</h3>
+          <div class="plan-price">
+            <span class="pp-amt" id="priceAmt">$19.99</span><span class="pp-per" id="pricePer">/month</span>
+          </div>
+          <p class="pp-note" id="priceNote">Billed monthly · cancel anytime</p>
+          <ul class="plan-feats">
+            <li>✓ <b>Unlimited</b> food scans</li>
+            <li>✓ Advanced 7-nutrient analysis</li>
+            <li>✓ Personalized meal plans + diet modes</li>
+            <li>✓ Meal replacements &amp; regeneration</li>
+            <li>✓ Progress tracking &amp; macro coaching</li>
+            <li>✓ Shopping lists &amp; premium recipes</li>
+          </ul>
+          <button class="btn btn-primary" id="pricingUpgradeBtn" data-auth="signup">Join The Club</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <h2>Eat with confidence, starting today.</h2>
+      <p>Your first AI scan is free.</p>
+      <button class="btn btn-glow btn-lg" data-auth="signup">Join The Club</button>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-brand">◍ Caloria</div>
+      <p>Made by <strong>Paullina Ruban</strong> · Helping girls build healthy habits without restriction.</p>
+      <p class="footer-links"><a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a> · <a href="/refund.html">Refund Policy</a></p>
+      <p class="footer-fine">Nutrition estimates are guidance, not medical advice.</p>
+    </footer>
+  </div>
+
+  <!-- ======================= AUTH MODAL ======================= -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal glass-strong">
+      <button class="modal-close" id="authClose">×</button>
+      <div class="modal-brand"><span class="brand-mark">◍</span> Caloria</div>
+      <h2 id="authTitle">Create your account</h2>
+      <p class="modal-sub" id="authSub">Create your account to join the Club.</p>
+      <form id="authForm">
+        <label class="field" id="nameField"><span>Name</span><input id="authName" type="text" autocomplete="name" placeholder="Your name" /></label>
+        <label class="field"><span>Email</span><input id="authEmail" type="email" autocomplete="email" placeholder="you@email.com" required /></label>
+        <label class="field"><span>Password</span><input id="authPassword" type="password" autocomplete="current-password" placeholder="••••••••" required /></label>
+        <div id="authCaptcha" class="auth-captcha"></div>
+        <div class="auth-error hidden" id="authError"></div>
+        <button class="btn btn-primary btn-block" id="authSubmit" type="submit">Create account</button>
+        <p class="auth-consent hidden" id="authConsent">By creating an account you agree to our
+          <a href="/terms.html" target="_blank" rel="noopener">Terms</a> and
+          <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+      </form>
+      <p class="auth-forgot hidden" id="authForgotWrap"><button id="authForgot" type="button">Forgot password?</button></p>
+      <p class="auth-switch">
+        <span id="authSwitchText">Already have an account?</span>
+        <button id="authSwitch">Log in</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- ======================= RESET PASSWORD MODAL ======================= -->
+  <div class="modal-overlay" id="resetModal">
+    <div class="modal glass-strong">
+      <div class="modal-brand"><span class="brand-mark">◍</span> Caloria</div>
+      <h2>Choose a new password</h2>
+      <p class="modal-sub">Enter a new password for your account.</p>
+      <form id="resetForm">
+        <label class="field"><span>New password</span><input id="resetPassword" type="password" autocomplete="new-password" placeholder="••••••••" required minlength="6" /></label>
+        <div class="auth-error hidden" id="resetError"></div>
+        <button class="btn btn-primary btn-block" id="resetSubmit" type="submit">Update password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================= EMAIL VERIFICATION CODE MODAL ======================= -->
+  <div class="modal-overlay" id="verifyModal">
+    <div class="modal glass-strong">
+      <button class="modal-close" id="verifyClose">×</button>
+      <div class="modal-brand"><span class="brand-mark">◍</span> Caloria</div>
+      <h2>Verify your email</h2>
+      <p class="modal-sub">We sent a 6-digit code to <b id="verifyEmail">your email</b>. Enter it below to activate your account.</p>
+      <form id="verifyForm">
+        <input id="verifyCodeInput" class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="6-digit verification code" />
+        <div class="auth-error hidden" id="verifyError"></div>
+        <button class="btn btn-primary btn-block" id="verifySubmit" type="submit">Verify &amp; continue</button>
+      </form>
+      <p class="auth-switch">Didn't get a code? <button id="verifyResendBtn" type="button">Resend code</button> <span class="muted" id="verifyResendMsg"></span></p>
+    </div>
+  </div>
+
+  <!-- ======================= DELETE ACCOUNT MODAL ======================= -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal glass-strong">
+      <button class="modal-close" id="deleteClose">×</button>
+      <h2>Delete your account?</h2>
+      <p class="modal-sub">This <b>permanently deletes</b> your account and <b>all your data</b> — profile, nutrition targets, meal logs, progress, coaching history and community posts. <b>This cannot be undone.</b></p>
+      <p class="modal-sub" id="deleteSubNote"></p>
+      <label class="ob-confirm" style="margin-top:6px"><input type="checkbox" id="deleteConfirmChk"/><span>I understand this is permanent and cannot be undone.</span></label>
+      <div class="auth-error hidden" id="deleteError"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-block" id="deleteCancel">Keep my account</button>
+        <button class="btn btn-danger btn-block" id="deleteConfirm" disabled>Delete permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================= MORNING CHECK-IN ======================= -->
+  <div class="modal-overlay" id="checkinModal">
+    <div class="modal glass-strong ritual-modal">
+      <button class="modal-close" id="checkinClose">×</button>
+      <div class="ritual-greeting" id="checkinGreeting">Good morning ☀️</div>
+      <h2>How are you feeling today?</h2>
+      <p class="modal-sub">Takes 10 seconds. This is your daily ritual.</p>
+      <div class="checkin-group" data-field="energy"><span class="ci-label">Energy</span><div class="ci-opts" id="ciEnergy"></div></div>
+      <div class="checkin-group" data-field="mood"><span class="ci-label">Mood</span><div class="ci-opts" id="ciMood"></div></div>
+      <div class="checkin-group" data-field="sleep"><span class="ci-label">Sleep</span><div class="ci-opts" id="ciSleep"></div></div>
+      <div class="checkin-group" data-field="hydration"><span class="ci-label">Hydration</span><div class="ci-opts" id="ciHydration"></div></div>
+      <div class="auth-error hidden" id="checkinError"></div>
+      <button class="btn btn-primary btn-block btn-lg" id="checkinSubmit">Complete check-in</button>
+    </div>
+  </div>
+
+  <!-- ======================= EVENING REFLECTION ======================= -->
+  <div class="modal-overlay" id="reflectModal">
+    <div class="modal glass-strong ritual-modal">
+      <button class="modal-close" id="reflectClose">×</button>
+      <div class="ritual-greeting">Evening reflection 🌙</div>
+      <h2>How did today feel?</h2>
+      <p class="modal-sub">No judgment — just a moment of reflection.</p>
+      <div class="reflect-opts" id="reflectOpts"></div>
+    </div>
+  </div>
+
+  <!-- ======================= SUNDAY RESET ======================= -->
+  <div class="modal-overlay" id="sundayModal">
+    <div class="modal glass-strong">
+      <button class="modal-close" id="sundayClose">×</button>
+      <div class="ritual-greeting">🌙 Sunday Reset</div>
+      <h2>Your week in review</h2>
+      <div class="sunday-stats" id="sundayStats"></div>
+      <div class="sunday-block"><h4>How your week felt</h4><div class="sunday-trends" id="sundayTrends"></div></div>
+      <div class="sunday-block"><h4>This week's wins</h4><ul class="jr-wins" id="sundayWins"></ul></div>
+      <div class="sunday-block"><h4>Biggest improvement</h4><p class="sunday-improve" id="sundayImprove"></p></div>
+      <div class="sunday-block"><h4>Craving insight</h4><p class="sunday-improve" id="sundayCraving"></p></div>
+      <div class="sunday-fy"><span class="sunday-fy-label">✨ Future You</span><p id="sundayFutureYou"></p></div>
+      <div class="sunday-block"><h4>Next week's focus</h4><ul class="jr-focus" id="sundayFocus"></ul></div>
+      <button class="btn btn-primary btn-block" id="sundayDone">I'm ready for a strong week 💪</button>
+    </div>
+  </div>
+
+  <!-- ======================= SHAREABLE MILESTONE CARD ======================= -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal glass-strong">
+      <button class="modal-close" id="shareClose">×</button>
+      <h2>Share your milestone</h2>
+      <div class="share-card" id="shareCard">
+        <div class="share-card-inner">
+          <span class="share-sparkle">✨</span>
+          <div class="share-headline" id="shareHeadline">7 Day Momentum</div>
+          <div class="share-sub" id="shareSub">Building my best version</div>
+          <div class="share-brand">◍ Caloria · Supermodel Wellness Club</div>
+        </div>
+      </div>
+      <p class="muted share-hint">Screenshot this card to share on Instagram or TikTok 💗</p>
+    </div>
+  </div>
+
+  <!-- ======================= PAYWALL MODAL ======================= -->
+  <div class="modal-overlay" id="paywallModal">
+    <div class="modal glass-strong paywall">
+      <button class="modal-close" id="paywallClose">×</button>
+      <span class="pill pill-aqua" id="paywallTrial">7-day free trial</span>
+      <h2 id="paywallTitle">Join the Supermodel Wellness Club</h2>
+      <p class="modal-sub" id="paywallReason">Go unlimited and get the full platform.</p>
+      <ul class="paywall-feats">
+        <li>✓ <b>Unlimited</b> AI food scans</li>
+        <li>✓ Personalized meal plans + diet modes</li>
+        <li>✓ AI workout generator + Coach Chat</li>
+        <li>✓ Progress tracking &amp; premium recipes</li>
+      </ul>
+      <div class="bill-toggle paywall-toggle">
+        <button class="bt-opt active" data-interval="monthly">Monthly · <b id="pwMonthly">$19.99</b></button>
+        <button class="bt-opt" data-interval="yearly">Yearly · <b id="pwYearly">$99</b></button>
+      </div>
+      <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
+      <button class="btn btn-glow btn-block btn-lg" id="paywallCheckout">Join The Club</button>
+      <p class="muted paywall-note" id="paywallNote">Cancel anytime before the trial ends — no charge.</p>
+    </div>
+  </div>
+
+  <!-- ======================= APP (authenticated) ======================= -->
+  <div id="app" class="hidden">
+    <header class="app-nav glass">
+      <a class="brand" data-view="dashboard"><img class="brand-mascot" src="/assets/logo-mascot.png?v=1" alt="Caloria" /><span class="brand-name">Caloria</span></a>
+      <div class="app-nav-right">
+        <button class="notif-bell" id="notifBell" aria-label="Notifications">🔔<span class="notif-dot hidden" id="notifDot"></span></button>
+        <span class="plan-chip" id="planChip">Free</span>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn">Log out</button>
+      </div>
+    </header>
+
+    <!-- in-app notification panel -->
+    <div class="notif-panel-overlay" id="notifOverlay">
+      <div class="notif-panel glass-strong" id="notifPanel">
+        <div class="notif-head"><b>Your notifications</b><button class="notif-close" id="notifClose">×</button></div>
+        <div class="notif-list" id="notifList"></div>
+      </div>
+    </div>
+
+    <main id="appMain">
+      <div class="verify-banner hidden" id="verifyBanner">
+        <span>✉️ Please verify your email to unlock scanning &amp; coaching.</span>
+        <button id="verifyEnterCode" type="button">Enter code</button>
+      </div>
+      <!-- ONBOARDING -->
+      <section class="view view-onboard" data-view="onboard">
+        <div class="onboard-card glass-strong">
+          <div class="onboard-top">
+            <span class="pill pill-aqua" id="obStepBadge">Step 1 of 14</span>
+            <span class="onboard-brand">✦ Luxury fitness assessment</span>
+          </div>
+          <div class="onboard-progress"><div class="onboard-bar" id="obBar"></div></div>
+          <div id="obStep" class="onboard-step"></div>
+          <div class="onboard-nav">
+            <button class="btn btn-ghost" id="obBack">Back</button>
+            <button class="btn btn-primary" id="obNext">Continue</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- DASHBOARD -->
+      <section class="view view-dashboard" data-view="dashboard">
+        <div class="dash-head">
+          <h2 id="dashGreeting">Welcome back</h2>
+          <p class="muted" id="dashDate"></p>
+        </div>
+
+        <button class="ritual-sunday glass-strong hidden" id="sundayResetBtn" type="button">
+          <span class="rs-emoji">🌙</span>
+          <div class="rs-body"><b>Sunday Reset</b><small>Your weekly review is ready — tap to reflect.</small></div>
+          <span class="rs-arrow">→</span>
+        </button>
+
+        <div class="ritual-card glass-strong" id="ritualCard"></div>
+
+        <div class="bv-card glass-strong" id="bvCard">
+          <div class="bv-head"><span class="bv-label">Best Version Meter</span><b class="bv-score" id="bvScore">—</b></div>
+          <div class="bv-bar"><i id="bvBar"></i></div>
+          <p class="bv-msg" id="bvMsg"></p>
+        </div>
+
+        <div class="streak-row glass-strong" id="streakRow">
+          <div class="sr-flame"><span>🔥</span><b id="srStreak">0</b><small id="srLabel">day streak</small></div>
+          <button class="sr-freeze" id="freezeBtn" type="button">❄️ Protect streak</button>
+        </div>
+
+        <div class="quest-card glass-strong hidden" id="questCard">
+          <div class="quest-head"><b>✨ First Week Quest</b><span id="questProgress" class="muted"></span></div>
+          <div class="quest-steps" id="questSteps"></div>
+        </div>
+
+        <div class="motivation-banner glass hidden" id="motivationBanner">
+          <span class="mb-icon" id="mbIcon">✨</span>
+          <div class="mb-body">
+            <span class="mb-label" id="mbLabel">Daily motivation</span>
+            <p class="mb-msg" id="mbMsg"></p>
+          </div>
+        </div>
+
+        <div class="dash-section-head"><h3>Today's nutrition</h3></div>
+        <div class="targets-card glass-strong">
+          <div class="target-ring-wrap">
+            <div class="target-ring" id="calRing">
+              <div class="tr-inner"><b id="dashCalLeft">0</b><span>kcal left</span></div>
+            </div>
+          </div>
+          <div class="target-macros">
+            <div class="tm"><span class="tm-label">Eaten</span><b id="dashEaten">0</b><span class="tm-sub">of <i id="dashTarget">0</i> kcal</span></div>
+            <div class="tm-bars">
+              <div class="mb"><span>Protein</span><div class="mb-track"><i id="barP"></i></div><b id="valP">0/0g</b></div>
+              <div class="mb"><span>Carbs</span><div class="mb-track"><i id="barC" class="c"></i></div><b id="valC">0/0g</b></div>
+              <div class="mb"><span>Fats</span><div class="mb-track"><i id="barF" class="f"></i></div><b id="valF">0/0g</b></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="upsell-banner glass hidden" id="dashUpgrade">
+          <div class="ub-left"><span class="ub-emoji">✨</span>
+            <div><b id="ubTitle">Start your 7-day free trial</b><small id="ubSub">Unlimited scans, meal plans, workouts &amp; AI coach.</small></div>
+          </div>
+          <span class="ub-cta">Try free →</span>
+        </button>
+
+        <div class="dash-actions">
+          <button class="action-tile glass" data-view="scan"><span>📸</span>Scan a meal</button>
+          <button class="action-tile glass" data-view="plan"><span>🗓️</span>Meal plan</button>
+        </div>
+
+        <div class="dash-section-head"><h3>Today's meals</h3></div>
+        <div id="wallList" class="wall-list"></div>
+        <div class="wall-empty glass" id="wallEmpty">
+          <span class="empty-emoji">🍽️</span><h3>No meals yet today</h3>
+          <p class="muted">Scan your first meal to start tracking.</p>
+          <button class="btn btn-primary" data-view="scan">Scan a meal</button>
+        </div>
+      </section>
+
+      <!-- JOURNEY (motivation · progress · retention hub) -->
+      <section class="view view-journey" data-view="journey">
+        <div class="view-head"><h2>Your Journey ✨</h2><p class="muted">Progress you can feel — before the mirror catches up.</p></div>
+
+        <div class="jr-daily glass-strong">
+          <span class="jr-daily-label">Today's Message</span>
+          <p class="jr-daily-msg" id="jrDaily">…</p>
+          <p class="jr-identity" id="jrIdentity"></p>
+        </div>
+
+        <div class="jr-card glass-strong">
+          <div class="jr-glow-head">
+            <div class="jr-glow-score"><b id="jrGlow">0</b><small>/100</small></div>
+            <div class="jr-glow-meta">
+              <div class="jr-card-title">Glow Score</div>
+              <div class="jr-glow-bar"><i id="jrGlowBar"></i></div>
+            </div>
+          </div>
+          <div class="jr-dims" id="jrDims"></div>
+        </div>
+
+        <div class="jr-card jr-future glass-strong">
+          <div class="jr-card-title">✨ Future You</div>
+          <p class="jr-future-text" id="jrFuture"></p>
+        </div>
+
+        <div class="jr-card glass-strong jr-insights-card hidden" id="jrPatternsCard">
+          <div class="jr-card-title">Patterns We're Noticing</div>
+          <ul class="jr-insights" id="jrPatterns"></ul>
+        </div>
+
+        <div class="jr-card glass-strong jr-glowup-card" id="jrGlowInsightsCard">
+          <div class="jr-card-title">Glow-Up Insights</div>
+          <ul class="jr-insights jr-glowup" id="jrGlowInsights"></ul>
+        </div>
+
+        <div class="jr-card glass-strong">
+          <div class="jr-card-title">Transformation Journey</div>
+          <div class="jr-stage-now"><b id="jrStageName">Starting</b><span class="muted" id="jrStageBlurb"></span></div>
+          <div class="jr-stages" id="jrStages"></div>
+          <p class="muted jr-next" id="jrNextStage"></p>
+        </div>
+
+        <div class="jr-card glass-strong jr-streak-card">
+          <div class="jr-streak-big"><span>🔥</span><b id="jrStreak">0</b><small>day streak</small></div>
+          <div class="jr-streak-meta"><b id="jrStreakTier"></b><span class="muted" id="jrLongest"></span></div>
+        </div>
+
+        <div class="jr-card glass-strong">
+          <div class="jr-card-title">This Week</div>
+          <ul class="jr-wins" id="jrWins"></ul>
+          <div class="jr-card-title jr-focus-title">Next Week Focus</div>
+          <ul class="jr-focus" id="jrFocus"></ul>
+        </div>
+
+        <div class="jr-card glass-strong">
+          <div class="jr-card-title">Your Milestones</div>
+          <ul class="jr-miles" id="jrMiles"></ul>
+        </div>
+
+        <div class="jr-card glass-strong">
+          <div class="jr-card-title">Achievements</div>
+          <div class="jr-badges" id="jrBadges"></div>
+        </div>
+      </section>
+
+      <!-- SCAN -->
+      <section class="view view-scan" data-view="scan">
+        <div class="view-head"><h2>Scan a meal</h2><p class="muted">Real AI analysis — powered by GPT-4o Vision + USDA.</p></div>
+
+        <div class="scan-stage" id="scanCapture">
+          <div class="camera-frame glass-strong">
+            <div class="camera-placeholder" id="cameraPlaceholder"><span>📸</span><p>Take a photo of your meal, or choose one from your gallery</p></div>
+            <div class="camera-guides"></div>
+          </div>
+          <div class="scan-controls">
+            <label class="btn btn-primary" for="cameraInput">📸 Take Photo</label>
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden />
+            <label class="btn btn-ghost" for="galleryInput">🖼️ Choose from Gallery</label>
+            <input type="file" id="galleryInput" accept="image/*" hidden />
+          </div>
+          <p class="scan-hint">Tip: a top-down photo in good light gives the best accuracy.</p>
+        </div>
+
+        <div class="scan-stage hidden" id="scanLoading">
+          <div class="analyze-card glass-strong">
+            <img id="analyzePreview" alt="Your meal" />
+            <div class="analyze-overlay"><div class="scan-laser"></div></div>
+          </div>
+          <div class="loader"><span></span><span></span><span></span></div>
+          <p class="loading-text" id="loadingText">Sending your plate to the AI…</p>
+        </div>
+
+        <div class="scan-stage hidden" id="scanError">
+          <div class="error-card glass"><span class="error-emoji">😕</span><h3 id="errorTitle">Couldn't analyse that</h3><p class="muted" id="errorText"></p>
+            <div class="error-actions"><button class="btn btn-ghost" id="errorRetryBtn">Try again</button><button class="btn btn-primary hidden" id="errorUpgradeBtn">Upgrade to Premium</button></div>
+          </div>
+        </div>
+
+        <div class="scan-stage hidden" id="scanResult">
+          <div class="result-card glass-strong">
+            <img id="resultImage" class="result-img" alt="Your meal" />
+            <div class="result-body">
+              <div class="result-head">
+                <input class="result-name" id="resultName" value="Meal" />
+                <span class="conf-badge" id="confBadge"></span>
+              </div>
+              <div class="lowconf hidden" id="lowConfNote">⚠️ Low confidence — double-check items &amp; grams below.</div>
+              <div class="warnnote hidden" id="warnNote"></div>
+
+              <div class="cal-ring"><div class="cal-big"><span id="resCalories">0</span><small>kcal</small></div></div>
+
+              <div class="macro-grid">
+                <div class="macro macro-p"><label>Protein</label><b id="sumP">0</b><span>g</span></div>
+                <div class="macro macro-c"><label>Carbs</label><b id="sumC">0</b><span>g</span></div>
+                <div class="macro macro-f"><label>Fats</label><b id="sumF">0</b><span>g</span></div>
+                <div class="macro macro-fb"><label>Fiber</label><b id="sumFb">0</b><span>g</span></div>
+                <div class="macro macro-sg"><label>Sugar</label><b id="sumSg">0</b><span>g</span></div>
+                <div class="macro macro-sd"><label>Sodium</label><b id="sumSd">0</b><span>mg</span></div>
+              </div>
+
+              <div class="quality-card hidden" id="qualityCard">
+                <div class="quality-head">
+                  <div class="quality-score"><b id="qScore">0</b><small>/10</small></div>
+                  <div class="quality-meta">
+                    <div class="quality-label">Meal Quality Score</div>
+                    <div class="quality-stars" id="qStars" aria-hidden="true"></div>
+                  </div>
+                </div>
+                <div class="quality-section quality-benefits hidden" id="qBenefitsWrap">
+                  <h5>✓ Benefits</h5><ul id="qBenefits"></ul>
+                </div>
+                <div class="quality-section quality-improve hidden" id="qImproveWrap">
+                  <h5>△ Areas for improvement</h5><ul id="qImprove"></ul>
+                </div>
+                <div class="quality-section quality-recs hidden" id="qRecsWrap">
+                  <h5>✦ Coach recommendations</h5><ul id="qRecs"></ul>
+                </div>
+              </div>
+
+              <div class="craving-card hidden" id="cravingCard">
+                <div class="craving-title">💭 Why You Might Be Craving This</div>
+                <ul class="craving-reasons" id="cravingReasons"></ul>
+                <div class="craving-swap">
+                  <div class="craving-swap-row"><span class="craving-swap-label">Instead of</span><b id="cravingInstead"></b></div>
+                  <div class="craving-swap-row craving-try"><span class="craving-swap-label">Try this</span><b id="cravingTry"></b></div>
+                </div>
+                <p class="craving-note">Possibilities, not conclusions — you know your body best. 💗</p>
+              </div>
+
+              <h4 class="ingredients-title">Ingredients <span>· tap grams to fine-tune</span></h4>
+              <div id="ingredientList" class="ingredient-list"></div>
+
+              <p class="result-note">Adjusting a portion teaches Caloria your real serving sizes.</p>
+              <div class="result-actions">
+                <button class="btn btn-ghost" id="rescanBtn">Scan again</button>
+                <button class="btn btn-primary" id="addToWallBtn">💗 Save meal</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <canvas id="captureCanvas" hidden></canvas>
+      </section>
+
+      <!-- MEAL PLAN -->
+      <section class="view view-plan" data-view="plan">
+        <div class="view-head"><h2>Your meal plan</h2><p class="muted">A full day built around your targets.</p></div>
+
+        <div class="plan-controls glass">
+          <div class="modes" id="dietModes">
+            <button class="mode-chip" data-mode="vegetarian">🌱 Vegetarian</button>
+            <button class="mode-chip" data-mode="vegan">🌿 Vegan</button>
+            <button class="mode-chip" data-mode="gluten_free">🌾 Gluten-free</button>
+            <button class="mode-chip" data-mode="dairy_free">🥛 Dairy-free</button>
+            <button class="mode-chip" data-mode="high_protein">💪 High-protein</button>
+          </div>
+          <button class="btn btn-primary btn-block" id="genPlanBtn">✨ Generate meal plan</button>
+          <p class="plan-premium-note hidden" id="planPremiumNote">🔒 Diet modes &amp; meal swaps are Premium.</p>
+        </div>
+
+        <div id="planLoading" class="plan-loading hidden">
+          <div class="loader"><span></span><span></span><span></span></div>
+          <p class="loading-text">Designing your day of meals…</p>
+        </div>
+
+        <div id="planTargets" class="plan-targets glass hidden"></div>
+        <div id="planMeals" class="plan-meals"></div>
+        <div id="shoppingList" class="shopping-list glass hidden"></div>
+      </section>
+
+      <!-- AI COACH CHAT -->
+      <section class="view view-coach" data-view="coach">
+        <div class="view-head"><h2>Supermodel Wellness Coach 💬</h2><p class="muted">Your private wellness mentor — ask anything: nutrition, habits, training, digestion, travel &amp; more.</p></div>
+
+        <div id="coachLocked" class="upgrade-card glass-strong hidden">
+          <span class="pill pill-aqua">Premium</span>
+          <h3>Chat with your AI coach</h3>
+          <p class="muted">Unlimited, personalized coaching that adapts to your week — workouts on demand, motivation when you need it.</p>
+          <ul class="plan-feats">
+            <li>✓ "Create a 20-minute glute workout"</li>
+            <li>✓ "I only have dumbbells today"</li>
+            <li>✓ "I missed my workouts this week"</li>
+          </ul>
+          <button class="btn btn-primary btn-block btn-lg" data-view="account">Upgrade to Premium</button>
+        </div>
+
+        <div id="coachChat" class="coach-chat hidden">
+          <div class="chat-log" id="chatLog"></div>
+          <div class="chat-suggestions" id="chatSuggestions">
+            <button data-suggest="Create a 20-minute glute workout">🍑 20-min glutes</button>
+            <button data-suggest="I only have dumbbells today">🏋️ Only dumbbells</button>
+            <button data-suggest="I have no gym access, give me a home workout">🏠 Home workout</button>
+            <button data-suggest="I missed my workouts this week, help me get back on track">💗 I missed this week</button>
+          </div>
+          <form class="chat-input glass" id="chatForm">
+            <input id="chatInput" placeholder="Ask your coach…" autocomplete="off" />
+            <button class="chat-send" type="submit" aria-label="Send">➤</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- WORKOUT GENERATOR -->
+      <section class="view view-workout" data-view="workout">
+        <div class="view-head"><h2>Workout</h2><p class="muted">Pick a category — get one focused workout.</p></div>
+
+        <!-- Category picker (shown when there is no active workout) -->
+        <div class="workout-controls glass" id="workoutPicker">
+          <span class="field-label">Choose your workout</span>
+          <div class="focus-chips" id="categoryChips">
+            <button class="focus-chip active" data-cat="glutes">🍑 Glutes</button>
+            <button class="focus-chip" data-cat="full_body">🏋️ Full Body</button>
+            <button class="focus-chip" data-cat="upper_body">💪 Upper Body</button>
+            <button class="focus-chip" data-cat="lower_body">🦵 Lower Body</button>
+            <button class="focus-chip" data-cat="abs_core">🔥 Abs &amp; Core</button>
+            <button class="focus-chip" data-cat="cardio">🏃‍♀️ Cardio</button>
+            <button class="focus-chip" data-cat="home">🏠 Home Workout</button>
+          </div>
+          <div class="wc-grid">
+            <label class="field"><span>Goal</span>
+              <select id="woGoal">
+                <option value="fat_loss">Fat loss</option>
+                <option value="glute_growth">Glute growth</option>
+                <option value="muscle_growth">Muscle growth</option>
+                <option value="maintenance">Maintenance &amp; healthy lifestyle</option>
+              </select></label>
+            <label class="field"><span>Training location / equipment</span>
+              <select id="woEquip">
+                <option value="gym">Full gym</option>
+                <option value="home">Home (minimal)</option>
+                <option value="dumbbell">Dumbbells</option>
+                <option value="bands">Resistance bands</option>
+                <option value="bodyweight">Bodyweight only</option>
+              </select></label>
+            <label class="field"><span>Session length</span>
+              <select id="woDuration"><option value="20">20 min</option><option value="30" selected>30 min</option><option value="45">45 min</option><option value="60">60 min</option></select></label>
+            <label class="field"><span>Fitness level</span>
+              <select id="woLevel"><option value="beginner">Beginner</option><option value="intermediate" selected>Intermediate</option><option value="advanced">Advanced</option></select></label>
+          </div>
+          <button class="btn btn-primary btn-block btn-lg" id="genWorkoutBtn">💪 Generate my workout</button>
+          <p class="plan-premium-note hidden" id="workoutPremiumNote">Workouts are a Premium feature.</p>
+        </div>
+
+        <div id="workoutLoading" class="plan-loading hidden">
+          <div class="loader"><span></span><span></span><span></span></div>
+          <p class="loading-text">Building your workout…</p>
+        </div>
+        <div id="workoutResult"></div>
+
+        <div class="workout-history-block" id="workoutHistoryBlock">
+          <h3 class="wh-title">🏆 Completed workouts</h3>
+          <div id="workoutHistory"></div>
+        </div>
+      </section>
+
+      <!-- THE CLUB (community) -->
+      <section class="view view-club" data-view="club">
+        <div class="view-head"><h2>The Club 👑</h2><p class="muted" id="clubProof">A private community of women building their dream body.</p></div>
+        <div class="club-tabs">
+          <button class="club-tab active" data-club="feed">Feed</button>
+          <button class="club-tab" data-club="wall">Transformations</button>
+          <button class="club-tab" data-club="profile">My Profile</button>
+        </div>
+
+        <div class="club-pane" id="clubFeed">
+          <div class="composer glass">
+            <div class="composer-types" id="composerTypes">
+              <button class="ctype active" data-ptype="win">🏆 Win</button>
+              <button class="ctype" data-ptype="food">🍳 Food</button>
+              <button class="ctype" data-ptype="workout">💪 Workout</button>
+              <button class="ctype" data-ptype="progress">📈 Progress</button>
+              <button class="ctype" data-ptype="transformation">✨ Transformation</button>
+            </div>
+            <textarea id="composerText" placeholder="Share a win, a meal, a workout, a milestone…"></textarea>
+            <div class="composer-photos" id="composerPhotos"></div>
+            <div class="composer-actions">
+              <label class="btn btn-ghost btn-sm" for="composerFile">📷 Photo</label>
+              <input type="file" id="composerFile" accept="image/*" hidden />
+              <label class="btn btn-ghost btn-sm hidden" id="composerFile2Label" for="composerFile2">＋ After</label>
+              <input type="file" id="composerFile2" accept="image/*" hidden />
+              <button class="btn btn-primary btn-sm" id="composerPost">Share 💗</button>
+            </div>
+          </div>
+          <div id="clubFeedList" class="feed-list"></div>
+        </div>
+
+        <div class="club-pane hidden" id="clubWallPane">
+          <p class="muted wall-intro">✨ Real women. Real transformations.</p>
+          <div id="clubWallList" class="feed-list"></div>
+        </div>
+
+        <div class="club-pane hidden" id="clubProfilePane"></div>
+      </section>
+
+      <!-- ACCOUNT / SUBSCRIPTION -->
+      <section class="view view-account" data-view="account">
+        <div class="view-head"><h2>Your account</h2></div>
+        <div class="account-card glass-strong">
+          <div class="acct-row acct-pic-row"><span>Profile picture</span>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:10px">
+              <span class="acct-avatar" id="acctAvatar">🌸</span>
+              <button class="btn btn-ghost btn-sm" id="acctEditPic">Edit Profile Picture</button>
+            </span></div>
+          <div class="acct-row"><span>Signed in as</span><b id="acctEmail"></b></div>
+          <div class="acct-row"><span>Current plan</span><b id="acctPlan">Free</b></div>
+          <div class="acct-row"><span>Scans used</span><b id="acctScans">0</b></div>
+        </div>
+
+        <div class="upgrade-card glass-strong" id="upgradeCard">
+          <span class="pill pill-aqua">Premium</span>
+          <h3>Unlock the full platform</h3>
+          <ul class="plan-feats">
+            <li>✓ Unlimited AI food scans</li>
+            <li>✓ Diet modes, meal swaps &amp; premium recipes</li>
+            <li>✓ Progress tracking &amp; macro coaching</li>
+            <li>✓ Shopping lists</li>
+          </ul>
+          <div class="bill-toggle">
+            <button class="bt-opt active" data-interval="monthly">Monthly · <b id="upMonthly">$19.99</b></button>
+            <button class="bt-opt" data-interval="yearly">Yearly · <b id="upYearly">$99</b></button>
+          </div>
+          <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
+          <button class="btn btn-primary btn-block btn-lg" id="checkoutBtn">Upgrade to Premium</button>
+          <p class="muted checkout-note" id="checkoutNote"></p>
+        </div>
+
+        <div class="account-card glass-strong hidden" id="subCard">
+          <h3 class="acct-section-title">Subscription</h3>
+          <div class="acct-row"><span>Plan</span><b id="subPlan">Premium</b></div>
+          <div class="acct-row"><span>Status</span><b id="subStatus">—</b></div>
+          <div class="acct-row"><span>Renews</span><b id="subRenewal">—</b></div>
+          <div class="acct-row"><span>Next billing date</span><b id="subNextDate">—</b></div>
+          <div class="sub-actions">
+            <button class="btn btn-ghost btn-block" id="manageSubBtn">Manage subscription</button>
+          </div>
+          <p class="muted checkout-note" id="subNote"></p>
+        </div>
+
+        <div class="account-card glass-strong">
+          <h3 class="acct-section-title">Legal</h3>
+          <div class="acct-links">
+            <a href="/terms.html" target="_blank" rel="noopener">Terms of Service</a>
+            <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+            <a href="/refund.html" target="_blank" rel="noopener">Refund Policy</a>
+          </div>
+        </div>
+
+        <div class="account-card glass-strong danger-zone">
+          <h3 class="acct-section-title">Delete account</h3>
+          <p class="muted">Permanently delete your account and all your data. This cannot be undone.</p>
+          <button class="btn btn-danger btn-block" id="deleteAcctBtn">Delete my account</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="tabbar glass">
+      <button class="tab" data-view="dashboard"><span>🏠</span>Home</button>
+      <button class="tab" data-view="journey"><span>✨</span>Journey</button>
+      <button class="tab" data-view="scan"><span>📸</span>Scan</button>
+      <button class="tab" data-view="plan"><span>🗓️</span>Plan</button>
+      <button class="tab" data-view="workout"><span>💪</span>Train</button>
+      <button class="tab" data-view="coach"><span>💬</span>Coach</button>
+      <button class="tab" data-view="club"><span>👑</span>Club</button>
+      <button class="tab" data-view="account"><span>👤</span>Account</button>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="config.js?v=qa4"></script>
+  <script src="js/app.js?v=39"></script>
+</body>
+</html>

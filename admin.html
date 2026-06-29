@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
+<title>Caloria — Admin</title>
+  <link rel="icon" href="/favicon.ico?v=1" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32.png?v=1" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=1" />
+<style>
+  :root { --ink:#1f2430; --muted:#76808f; --line:#e7eaf0; --bg:#f6f8fb; --card:#fff;
+    --rose:#f24d8c; --aqua:#2bb5c9; --warn:#e8a33d; --bad:#e5484d; --good:#2fa86b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 -apple-system,system-ui,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--card); border-bottom:1px solid var(--line); padding:14px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:5; }
+  header h1 { font-size:17px; margin:0; letter-spacing:.02em; }
+  header .sub { color:var(--muted); font-size:13px; }
+  main { max-width:1120px; margin:0 auto; padding:20px; }
+  nav.tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+  nav.tabs button { background:#fff; border:1px solid var(--line); color:var(--muted); padding:9px 16px; border-radius:100px; font-weight:600; cursor:pointer; }
+  nav.tabs button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:18px; }
+  .card h2 { font-size:14px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 14px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .kpi { background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:15px; }
+  .kpi b { display:block; font-size:27px; line-height:1.1; }
+  .kpi b.big { font-size:32px; color:var(--good); }
+  .kpi span { color:var(--muted); font-size:13px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+  td.email { white-space:normal; }
+  .bar { position:relative; height:7px; background:var(--line); border-radius:6px; min-width:80px; overflow:hidden; margin-top:3px; }
+  .bar i { position:absolute; inset:0 auto 0 0; background:var(--aqua); }
+  .bar i.warn { background:var(--warn); } .bar i.bad { background:var(--bad); }
+  .tag { display:inline-block; font-size:11px; padding:2px 9px; border-radius:100px; font-weight:600; }
+  .tag.free { background:#eef1f6; color:var(--muted); } .tag.premium { background:#fde7f0; color:var(--rose); }
+  .tag.ok { background:#e3f5ec; color:var(--good); } .tag.warn { background:#fcf0db; color:#a96f1c; }
+  .tag.bad { background:#fde5e6; color:var(--bad); }
+  label { display:block; font-size:13px; color:var(--muted); margin:8px 0 4px; }
+  input,select,button.btn { font:inherit; padding:9px 11px; border-radius:9px; border:1px solid var(--line); background:#fff; color:var(--ink); }
+  button.btn { background:var(--ink); color:#fff; border:none; cursor:pointer; font-weight:600; }
+  button.btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  button.btn.sm { padding:5px 10px; font-size:12px; border-radius:7px; }
+  button.btn.danger { background:#fde5e6; color:var(--bad); }
+  button.btn.good { background:#e3f5ec; color:var(--good); }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+  .row > div { flex:1; min-width:120px; }
+  .msg { font-size:13px; margin-top:10px; }
+  .msg.err { color:var(--bad); } .msg.ok { color:var(--good); }
+  .hidden { display:none; }
+  .muted { color:var(--muted); }
+  .scroll { overflow-x:auto; }
+  /* AI dashboard */
+  .ai-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .ai-controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .ai-controls label { margin:0; display:flex; align-items:center; gap:5px; }
+  .ai-controls input[type=date], .ai-controls select { padding:7px 9px; }
+  .ai-controls .chk { color:var(--ink); font-size:13px; }
+  .ai-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:900px){ .ai-grid2 { grid-template-columns:1fr; } }
+  .chart { display:flex; flex-direction:column; gap:6px; }
+  .chart .row2 { display:grid; grid-template-columns:130px 1fr 70px; align-items:center; gap:8px; font-size:12px; }
+  .chart .cbar { height:16px; background:var(--aqua); border-radius:4px; min-width:2px; }
+  .chart .cbar.m1{background:#6c8cff}.chart .cbar.m2{background:#27c2a0}.chart .cbar.m3{background:#f2a13d}.chart .cbar.m4{background:#e0719b}
+  .chart .clbl { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chart .cval { text-align:right; font-variant-numeric:tabular-nums; }
+  th.sortable { cursor:pointer; user-select:none; } th.sortable:hover { color:var(--ink); }
+  th.sortable .arr { opacity:.5; font-size:10px; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  #loginCard { max-width:380px; margin:60px auto; }
+  .detail dl { display:grid; grid-template-columns:auto 1fr; gap:6px 16px; margin:0; font-size:14px; }
+  .detail dt { color:var(--muted); }
+  .pillrow { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+  .spark { display:flex; align-items:flex-end; gap:6px; height:70px; }
+  .spark .b { flex:1; background:var(--aqua); border-radius:4px 4px 0 0; min-height:3px; position:relative; }
+  .spark .b span { position:absolute; top:-18px; left:0; right:0; text-align:center; font-size:11px; color:var(--muted); }
+  .spark .lbl { font-size:10px; color:var(--muted); text-align:center; margin-top:4px; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Caloria Admin</h1><div class="sub">Business monitoring &amp; support — not visible to users</div></div>
+  <button class="btn ghost" id="logoutBtn" style="display:none">Sign out</button>
+</header>
+<main>
+  <div class="card" id="loginCard">
+    <h2>Admin sign in</h2>
+    <label>Email</label><input id="email" type="email" autocomplete="username" style="width:100%" />
+    <label>Password</label><input id="password" type="password" autocomplete="current-password" style="width:100%" />
+    <div style="margin-top:14px"><button class="btn" id="loginBtn" style="width:100%">Sign in</button></div>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <div id="app" class="hidden">
+    <nav class="tabs" id="tabs">
+      <button data-tab="business" class="active">Business</button>
+      <button data-tab="users">Users</button>
+      <button data-tab="subs">Subscriptions</button>
+      <button data-tab="analytics">Analytics</button>
+      <button data-tab="usage">Usage &amp; alerts</button>
+      <button data-tab="aicost">AI Cost</button>
+    </nav>
+
+    <!-- BUSINESS -->
+    <section data-panel="business">
+      <div class="card">
+        <h2>At a glance <span class="muted" id="bizPeriod"></span></h2>
+        <div class="kpis" id="bizKpis"></div>
+      </div>
+      <div class="card"><h2>Most active members</h2><div id="bizActive" class="scroll"></div></div>
+      <div class="card"><h2>Members approaching internal limits</h2><div id="bizApproach" class="scroll"></div></div>
+    </section>
+
+    <!-- USERS -->
+    <section data-panel="users" class="hidden">
+      <div class="card">
+        <h2>User management</h2>
+        <div class="row">
+          <div style="flex:3"><label>Search by email or name</label><input id="userSearch" placeholder="type to search…" style="width:100%" /></div>
+          <div style="flex:0"><button class="btn" id="userSearchBtn">Search</button></div>
+        </div>
+        <div class="scroll" id="userList" style="margin-top:14px"></div>
+      </div>
+      <div class="card hidden" id="userDetailCard">
+        <h2>User profile</h2>
+        <div class="detail" id="userDetail"></div>
+        <div class="msg" id="userMsg"></div>
+      </div>
+    </section>
+
+    <!-- SUBSCRIPTIONS -->
+    <section data-panel="subs" class="hidden">
+      <div class="card"><h2>Active subscriptions</h2><div class="scroll" id="subsActive"></div></div>
+      <div class="card"><h2>Past due (failed payment, in grace)</h2><div class="scroll" id="subsPastDue"></div></div>
+      <div class="card"><h2>Cancelled</h2><div class="scroll" id="subsCanceled"></div></div>
+      <div class="card"><h2>Recent failed payments</h2><div class="scroll" id="subsFailed"></div></div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section data-panel="analytics" class="hidden">
+      <div class="card"><h2>Key metrics <span class="muted" id="anPeriod"></span></h2><div class="kpis" id="anKpis"></div></div>
+      <div class="card"><h2>New users — last 6 months</h2><div class="spark" id="anGrowth"></div><div id="anGrowthLbls" style="display:flex;gap:6px"></div></div>
+    </section>
+
+    <!-- USAGE & ALERTS -->
+    <section data-panel="usage" class="hidden">
+      <div class="card">
+        <h2>Manual override</h2>
+        <div class="row">
+          <div><label>User email</label><input id="ovEmail" type="email" style="width:100%" /></div>
+          <div><label>Action</label>
+            <select id="ovAction" style="width:100%">
+              <option value="set_limit">Set monthly allowance (persistent)</option>
+              <option value="grant_bonus">Grant bonus (this month only)</option>
+              <option value="reset_usage">Reset this month's usage</option>
+              <option value="snapshot">View usage snapshot</option>
+            </select>
+          </div>
+          <div><label id="lblScans">Scans</label><input id="ovScans" type="number" min="0" style="width:100%" /></div>
+          <div><label id="lblCoach">Coach</label><input id="ovCoach" type="number" min="0" style="width:100%" /></div>
+          <div style="flex:0"><button class="btn" id="ovBtn">Apply</button></div>
+        </div>
+        <div class="msg" id="ovMsg"></div>
+      </div>
+      <div class="card"><h2>All members — usage this month</h2><div class="scroll" id="usageAll"></div></div>
+      <div class="card"><h2>Recent owner alerts</h2><div class="scroll" id="alertsBox"></div></div>
+    </section>
+
+    <!-- ================= AI COST & ANALYTICS ================= -->
+    <section data-panel="aicost" class="hidden">
+      <div class="card">
+        <div class="ai-toolbar">
+          <h2 style="margin:0">OpenAI Analytics <span class="muted" id="aiLive"></span></h2>
+          <div class="ai-controls">
+            <label>From <input type="date" id="aiStart"></label>
+            <label>To <input type="date" id="aiEnd"></label>
+            <select id="aiKind">
+              <option value="all">All endpoints</option>
+              <option value="scan_vision">Scan · vision</option>
+              <option value="scan_text">Scan · text</option>
+              <option value="coach">Coach</option>
+            </select>
+            <button class="btn" id="aiRefresh">Refresh</button>
+            <label class="chk"><input type="checkbox" id="aiAuto"> Auto (30s)</label>
+            <button class="btn ghost" id="aiCsv">Export CSV</button>
+          </div>
+        </div>
+        <div class="kpis" id="aiKpis"></div>
+      </div>
+
+      <div class="ai-grid2">
+        <div class="card"><h2>Daily cost — last 30 days</h2><div id="aiDayChart" class="chart"></div></div>
+        <div class="card"><h2>Cost by model</h2><div id="aiModelChart" class="chart"></div>
+          <h2 style="margin-top:16px">Cost by endpoint</h2><div id="aiKindChart" class="chart"></div></div>
+      </div>
+
+      <div class="ai-grid2">
+        <div class="card"><h2>Performance</h2><div class="kpis" id="aiPerf"></div>
+          <h3 class="muted" style="margin:14px 0 6px">Slowest requests</h3><div class="scroll" id="aiSlowest"></div></div>
+        <div class="card"><h2>Users</h2><div class="kpis" id="aiUserKpis"></div>
+          <h3 class="muted" style="margin:14px 0 6px">Most active users</h3><div class="scroll" id="aiActive"></div></div>
+      </div>
+
+      <div class="card"><h2>Top 20 most expensive requests</h2><div class="scroll" id="aiTop20"></div></div>
+
+      <div class="card">
+        <h2>Request log <span class="muted" id="aiLogCount"></span></h2>
+        <input id="aiSearch" placeholder="filter by email / model / endpoint…" style="width:100%;margin-bottom:10px" />
+        <div class="scroll" id="aiLog"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="config.js?v=1"></script>
+<script>
+  const API = window.CALORIA_API || `http://${location.hostname || "localhost"}:8787`;
+  const TOKEN_KEY = "caloria.admin.token";
+  let token = localStorage.getItem(TOKEN_KEY) || null;
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+  async function api(path, { method = "GET", body } = {}) {
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    let data = {}; try { data = await res.json(); } catch (_) {}
+    if (!res.ok) { const e = new Error(data.error || `Error ${res.status}`); e.status = res.status; throw e; }
+    return data;
+  }
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const money = (n) => "$" + Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const planTag = (p) => `<span class="tag ${p === "premium" ? "premium" : "free"}">${esc(p)}</span>`;
+  const yesno = (b, good) => `<span class="tag ${b ? (good||"ok") : "bad"}">${b ? "Yes" : "No"}</span>`;
+  const barCls = (p) => p >= 100 ? "bad" : p >= 75 ? "warn" : "";
+  function usageCell(v, lim) { const p = lim ? Math.round(v / lim * 100) : 0;
+    return `${v}/${lim} <span class="muted">${p}%</span><div class="bar"><i class="${barCls(p)}" style="width:${Math.min(100,p)}%"></i></div>`; }
+
+  /* ---------------- Business ---------------- */
+  async function loadBusiness() {
+    const o = await api("/api/admin/overview");
+    $("#bizKpis").innerHTML = [
+      ["Total members", o.users, ""],
+      ["Paying members", o.paying, ""],
+      ["Monthly revenue (MRR)", money(o.mrr), "big"],
+      ["Conversion rate", o.conversion_rate_pct + "%", ""],
+      ["New this month", o.new_users_this_month, ""],
+    ].map(([k, v, c]) => `<div class="kpi"><b class="${c}">${v}</b><span>${k}</span></div>`).join("");
+    $("#bizActive").innerHTML = o.most_active.length
+      ? `<table><thead><tr><th>Member</th><th>Scans</th><th>Coach msgs</th></tr></thead><tbody>` +
+        o.most_active.map((u) => `<tr><td class="email">${esc(u.email)}</td><td>${u.scans}</td><td>${u.coach}</td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No activity yet this month.</div>`;
+    $("#bizApproach").innerHTML = o.approaching_limit.length
+      ? `<table><thead><tr><th>Member</th><th>Scans</th><th>Coach</th></tr></thead><tbody>` +
+        o.approaching_limit.map((u) => `<tr><td class="email">${esc(u.email)}</td><td>${usageCell(u.scans,u.scan_limit)}</td><td>${usageCell(u.coach,u.coach_limit)}</td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">Nobody is close to a limit. 👍</div>`;
+  }
+
+  /* ---------------- Users ---------------- */
+  async function loadUsers(q = "") {
+    const d = await api("/api/admin/users" + (q ? "?q=" + encodeURIComponent(q) : ""));
+    $("#userList").innerHTML = d.users.length
+      ? `<table><thead><tr><th>Email</th><th>Name</th><th>Plan</th><th>Verified</th><th>Active</th><th>Status</th><th>Scans</th><th></th></tr></thead><tbody>` +
+        d.users.map((u) => `<tr>
+          <td class="email">${esc(u.email)}</td><td>${esc(u.name)}</td><td>${planTag(u.plan)}</td>
+          <td>${yesno(u.verified)}</td><td>${yesno(u.active)}</td><td>${esc(u.subscription_status)}</td><td>${u.scans}</td>
+          <td><button class="btn ghost sm" data-view="${esc(u.email)}">View</button></td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No matching users.</div>`;
+    $$('#userList [data-view]').forEach((b) => b.addEventListener("click", () => showUser(b.dataset.view)));
+  }
+  async function showUser(email) {
+    let u; try { u = await api("/api/admin/user?email=" + encodeURIComponent(email)); } catch (e) { return; }
+    $("#userDetailCard").classList.remove("hidden");
+    const issues = u.issues.length ? u.issues.map((i) => `<span class="tag ${i.includes("limit")||i.includes("deactiv")||i.includes("failed")?"bad":"warn"}">${esc(i)}</span>`).join(" ") : `<span class="tag ok">No issues</span>`;
+    const hist = u.billing_history.length
+      ? `<table><thead><tr><th>When</th><th>Event</th><th>Status</th></tr></thead><tbody>` +
+        u.billing_history.map((e) => `<tr><td>${esc((e.created_at||"").slice(0,16))}</td><td>${esc(e.type)}</td><td>${esc(e.status||"")}</td></tr>`).join("") + `</tbody></table>`
+      : `<span class="muted">No billing events.</span>`;
+    const pr = u.profile || {};
+    $("#userDetail").innerHTML = `
+      <dl>
+        <dt>Email</dt><dd>${esc(u.email)} ${yesno(u.verified)}</dd>
+        <dt>Name</dt><dd>${esc(u.name) || "—"}</dd>
+        <dt>Joined</dt><dd>${esc(u.joined)}</dd>
+        <dt>Plan</dt><dd>${planTag(u.plan)} · ${esc(u.subscription_status)}</dd>
+        <dt>Active</dt><dd>${yesno(u.active)}</dd>
+        <dt>Goal</dt><dd>${esc(pr.goal || pr.physique || "—")}</dd>
+        <dt>Scans (month)</dt><dd>${usageCell(u.usage.scans, u.usage.scan_limit)}</dd>
+        <dt>Coach (month)</dt><dd>${usageCell(u.usage.coach, u.usage.coach_limit)}</dd>
+        <dt>Saved meals</dt><dd>${u.usage.saved_meals} (last: ${esc((u.usage.last_meal||"—")).slice(0,16)})</dd>
+        <dt>Issues</dt><dd>${issues}</dd>
+        <dt>Billing</dt><dd>${hist}</dd>
+      </dl>
+      <div class="pillrow" style="margin-top:14px">
+        ${u.active ? `<button class="btn danger sm" data-act="deactivate">Deactivate</button>` : `<button class="btn good sm" data-act="activate">Reactivate</button>`}
+        ${u.plan === "premium" ? `<button class="btn ghost sm" data-act="revoke_premium">Revoke premium</button>` : `<button class="btn good sm" data-act="grant_premium">Grant premium</button>`}
+      </div>`;
+    $$('#userDetail [data-act]').forEach((b) => b.addEventListener("click", async () => {
+      try { await api("/api/admin/user/action", { method: "POST", body: { action: b.dataset.act, email: u.email } });
+        $("#userMsg").innerHTML = `<span class="msg ok">Done.</span>`; showUser(u.email); loadUsers($("#userSearch").value.trim()); }
+      catch (e) { $("#userMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
+    }));
+  }
+  $("#userSearchBtn").addEventListener("click", () => loadUsers($("#userSearch").value.trim()));
+  $("#userSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") loadUsers($("#userSearch").value.trim()); });
+
+  /* ---------------- Subscriptions ---------------- */
+  function subTable(rows, cols) {
+    if (!rows.length) return `<div class="muted">None.</div>`;
+    return `<table><thead><tr>${cols.map((c) => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>` +
+      rows.map((r) => `<tr>${cols.map((c) => `<td class="email">${esc(r[c[1]] || "")}</td>`).join("")}</tr>`).join("") + `</tbody></table>`;
+  }
+  async function loadSubs() {
+    const s = await api("/api/admin/subscriptions");
+    $("#subsActive").innerHTML = subTable(s.active, [["Email","email"],["Name","name"],["Status","status"],["Since","since"]]);
+    $("#subsPastDue").innerHTML = subTable(s.past_due, [["Email","email"],["Name","name"],["Since","since"]]);
+    $("#subsCanceled").innerHTML = subTable(s.canceled, [["Email","email"],["Name","name"],["Since","since"]]);
+    $("#subsFailed").innerHTML = subTable(s.failed_payments, [["Email","email"],["When","created_at"]]);
+  }
+
+  /* ---------------- Analytics ---------------- */
+  async function loadAnalytics() {
+    const a = await api("/api/admin/analytics");
+    $("#anPeriod").textContent = a.period;
+    $("#anKpis").innerHTML = [
+      ["Total users", a.total_users], ["Verified", `${a.verified_users} (${a.verified_pct}%)`],
+      ["Paying subscribers", a.paying_subscribers], ["Conversion", a.conversion_rate_pct + "%"],
+      ["MRR", money(a.mrr)], ["ARR (est.)", money(a.arr)],
+      ["New users (mo)", a.new_users_this_month], ["New subs (mo)", a.new_subscribers_this_month],
+      ["Retention", a.retention_pct + "%"], ["Churn", a.churn_pct + "%"],
+      ["Past due", a.past_due], ["Scans this month", a.usage_this_month.scans],
+    ].map(([k, v]) => `<div class="kpi"><b>${v}</b><span>${k}</span></div>`).join("");
+    const g = a.growth, max = Math.max(1, ...g.map((x) => x.new_users));
+    $("#anGrowth").innerHTML = g.map((x) => `<div class="b" style="height:${Math.round(x.new_users / max * 100)}%"><span>${x.new_users}</span></div>`).join("");
+    $("#anGrowthLbls").innerHTML = g.map((x) => `<div class="lbl" style="flex:1">${x.month.slice(5)}</div>`).join("");
+  }
+
+  /* ---------------- Usage & alerts ---------------- */
+  async function loadUsage() {
+    const d = await api("/api/admin/dashboard");
+    $("#usageAll").innerHTML = d.users.length
+      ? `<table><thead><tr><th>Email</th><th>Plan</th><th>Scans</th><th>Coach</th></tr></thead><tbody>` +
+        d.users.map((u) => `<tr><td class="email">${esc(u.email)}</td><td>${planTag(u.plan)}</td><td>${usageCell(u.scans,u.scan_limit)}</td><td>${usageCell(u.coach,u.coach_limit)}</td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No members yet.</div>`;
+    const a = await api("/api/admin/alerts");
+    $("#alertsBox").innerHTML = a.alerts.length
+      ? `<table><thead><tr><th>When</th><th>Email</th><th>Metric</th><th>Threshold</th></tr></thead><tbody>` +
+        a.alerts.map((x) => `<tr><td>${esc((x.created_at||"").slice(0,16))}</td><td class="email">${esc(x.email)}</td><td>${esc(x.metric)}</td><td><span class="tag ${x.threshold>=100?"bad":"warn"}">${x.threshold}%</span></td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No alerts yet.</div>`;
+  }
+  function syncOv() { const a = $("#ovAction").value, show = a === "set_limit" || a === "grant_bonus";
+    $("#ovScans").parentElement.style.display = show ? "" : "none"; $("#ovCoach").parentElement.style.display = show ? "" : "none";
+    $("#lblScans").textContent = a === "set_limit" ? "Scan limit" : "Bonus scans"; $("#lblCoach").textContent = a === "set_limit" ? "Coach limit" : "Bonus coach"; }
+  $("#ovAction").addEventListener("change", syncOv);
+  $("#ovBtn").addEventListener("click", async () => {
+    const action = $("#ovAction").value, email = $("#ovEmail").value.trim(), s = $("#ovScans").value, c = $("#ovCoach").value;
+    const body = { action, email };
+    if (action === "set_limit") { if (s !== "") body.scan_limit = +s; if (c !== "") body.coach_limit = +c; }
+    if (action === "grant_bonus") { body.scans = +s || 0; body.coach = +c || 0; }
+    try { const r = await api("/api/admin/override", { method: "POST", body }); const u = r.user;
+      $("#ovMsg").innerHTML = `<span class="msg ok">${esc(u.email)} — scans ${u.scans}/${u.scan_limit}, coach ${u.coach}/${u.coach_limit}</span>`; loadUsage(); }
+    catch (e) { $("#ovMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
+  });
+
+  /* ---------------- AI cost & analytics dashboard ---------------- */
+  const usd = (n) => "$" + (Number(n||0) >= 1 ? Number(n||0).toFixed(2) : Number(n||0).toFixed(5));
+  const ms = (n) => Math.round(Number(n||0)).toLocaleString() + " ms";
+  const KIND_LABEL = { scan_vision: "Scan · vision", scan_text: "Scan · text", coach: "Coach" };
+  let aiData = null, aiRecent = [], aiSort = { key: "id", dir: -1 }, aiTimer = null;
+
+  function bars(items, label, val, fmt, cls) {
+    const max = Math.max(1, ...items.map((x) => Number(x[val]) || 0));
+    if (!items.length) return '<div class="muted">No data yet.</div>';
+    return items.map((x, i) => {
+      const w = Math.max(2, Math.round((Number(x[val]) || 0) / max * 100));
+      const c = cls ? `m${(i % 4) + 1}` : "";
+      return `<div class="row2"><span class="clbl">${esc(label(x))}</span>`
+           + `<span class="cbar ${c}" style="width:${w}%"></span>`
+           + `<span class="cval">${fmt(x[val])}</span></div>`;
+    }).join("");
+  }
+
+  async function loadAiCost() {
+    const qs = new URLSearchParams();
+    if ($("#aiStart").value) qs.set("start", $("#aiStart").value);
+    if ($("#aiEnd").value) qs.set("end", $("#aiEnd").value);
+    if ($("#aiKind").value) qs.set("kind", $("#aiKind").value);
+    qs.set("limit", "1000");
+    let d;
+    try { d = await api("/api/admin/ai-usage?" + qs.toString()); }
+    catch (e) { $("#aiKpis").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; return; }
+    aiData = d.analytics; aiRecent = d.recent || [];
+    $("#aiLive").textContent = "· updated " + new Date().toLocaleTimeString();
+    renderAi();
+  }
+
+  function renderAi() {
+    const a = aiData; if (!a) return;
+    const sp = a.spend, t = a.totals, p = a.performance, u = a.users;
+    $("#aiKpis").innerHTML = [
+      ["Total spend", usd(sp.total), "big"], ["Today", usd(sp.today)], ["Last 7 days", usd(sp.week)],
+      ["Est. monthly bill", usd(sp.est_monthly), "big"], ["Total AI requests", t.requests],
+      ["Avg / meal scan", usd(t.avg_cost_per_scan)], ["Avg / coach msg", usd(t.avg_cost_per_coach)],
+      ["Success rate", p.success_rate + "%"],
+    ].map(([k, v, c]) => `<div class="kpi"><b class="${c || ""}">${v}</b><span>${k}</span></div>`).join("");
+
+    $("#aiDayChart").innerHTML = bars([...a.cost.by_day].reverse(), (x) => x.bucket, "cost", usd);
+    $("#aiModelChart").innerHTML = bars(a.cost.by_model, (x) => x.model, "cost", usd, true);
+    $("#aiKindChart").innerHTML = bars(a.cost.by_kind, (x) => KIND_LABEL[x.kind] || x.kind, "cost", usd, true);
+
+    $("#aiPerf").innerHTML = [
+      ["Avg response", ms(p.avg_ms)], ["Avg scan", ms(p.avg_scan_ms)], ["Avg coach", ms(p.avg_coach_ms)],
+      ["Success", p.success_rate + "%"], ["Errors", p.error_rate + "%"], ["Timeouts", p.timeout_rate + "%"],
+    ].map(([k, v]) => `<div class="kpi"><b>${v}</b><span>${k}</span></div>`).join("");
+    $("#aiSlowest").innerHTML = tbl(p.slowest, [
+      ["created_at", "Time", (r) => fmtTs(r.created_at)], ["kind", "Endpoint", (r) => KIND_LABEL[r.kind] || r.kind],
+      ["email", "User", (r) => esc(r.email || ("#" + (r.user_id ?? "—")))], ["duration_ms", "Duration", (r) => ms(r.duration_ms), 1],
+      ["cost_usd", "Cost", (r) => usd(r.cost_usd), 1],
+    ]);
+
+    $("#aiUserKpis").innerHTML = [
+      ["Total AI users", u.total_ai_users], ["Active today", u.dau], ["Active 7d", u.wau], ["Active 30d", u.mau],
+      ["Avg scans/day", u.avg_scans_per_day], ["Avg coach/day", u.avg_coach_per_day],
+    ].map(([k, v]) => `<div class="kpi"><b>${v}</b><span>${k}</span></div>`).join("");
+    $("#aiActive").innerHTML = tbl(u.most_active, [
+      ["email", "User", (r) => esc(r.email || ("#" + (r.user_id ?? "—")))], ["scans", "Scans", (r) => r.scans, 1],
+      ["coach", "Coach", (r) => r.coach, 1], ["requests", "Requests", (r) => r.requests, 1],
+      ["cost", "Cost", (r) => usd(r.cost), 1],
+    ]);
+
+    $("#aiTop20").innerHTML = tbl(a.cost.top20, [
+      ["created_at", "Time", (r) => fmtTs(r.created_at)], ["kind", "Endpoint", (r) => KIND_LABEL[r.kind] || r.kind],
+      ["model", "Model", (r) => esc(r.model)], ["email", "User", (r) => esc(r.email || ("#" + (r.user_id ?? "—")))],
+      ["total_tokens", "Tokens", (r) => r.total_tokens, 1], ["duration_ms", "ms", (r) => r.duration_ms, 1],
+      ["cost_usd", "Cost", (r) => usd(r.cost_usd), 1],
+    ]);
+    renderAiLog();
+  }
+
+  function fmtTs(s) { return esc(String(s || "").replace("T", " ").slice(0, 19)); }
+  function tbl(rows, cols) {
+    if (!rows || !rows.length) return '<div class="muted">No data yet.</div>';
+    const head = "<tr>" + cols.map((c) => `<th${c[3] ? ' class="num"' : ""}>${c[1]}</th>`).join("") + "</tr>";
+    const body = rows.map((r) => "<tr>" + cols.map((c) => `<td${c[3] ? ' class="num"' : (c[0] === "email" ? ' class="email"' : "")}>${c[2](r)}</td>`).join("") + "</tr>").join("");
+    return `<table>${head}${body}</table>`;
+  }
+
+  // sortable + searchable request log
+  const LOG_COLS = [
+    ["created_at", "Time", (r) => fmtTs(r.created_at)],
+    ["email", "User", (r) => esc(r.email || ("#" + (r.user_id ?? "—")))],
+    ["kind", "Endpoint", (r) => KIND_LABEL[r.kind] || r.kind],
+    ["model", "Model", (r) => esc(r.model)],
+    ["prompt_tokens", "In", (r) => r.prompt_tokens, 1],
+    ["completion_tokens", "Out", (r) => r.completion_tokens, 1],
+    ["total_tokens", "Total", (r) => r.total_tokens, 1],
+    ["duration_ms", "ms", (r) => r.duration_ms, 1],
+    ["cost_usd", "Cost", (r) => usd(r.cost_usd), 1],
+    ["status", "Status", (r) => `<span class="tag ${r.status === "ok" ? "ok" : "bad"}">${esc(r.status)}</span>`],
+  ];
+  function renderAiLog() {
+    const q = ($("#aiSearch").value || "").toLowerCase();
+    let rows = aiRecent.filter((r) => !q || `${r.email||""} ${r.model||""} ${r.kind||""} ${r.status||""}`.toLowerCase().includes(q));
+    const k = aiSort.key, dir = aiSort.dir;
+    rows = [...rows].sort((a, b) => {
+      let x = a[k], y = b[k];
+      if (typeof x === "string" || typeof y === "string") { x = String(x||""); y = String(y||""); return x < y ? -dir : x > y ? dir : 0; }
+      return ((x||0) - (y||0)) * dir;
+    });
+    $("#aiLogCount").textContent = `· ${rows.length} requests`;
+    const head = "<tr>" + LOG_COLS.map((c) => {
+      const arr = aiSort.key === c[0] ? (aiSort.dir > 0 ? "▲" : "▼") : "";
+      return `<th class="sortable${c[3] ? " num" : ""}" data-k="${c[0]}">${c[1]} <span class="arr">${arr}</span></th>`;
+    }).join("") + "</tr>";
+    const body = rows.map((r) => "<tr>" + LOG_COLS.map((c) => `<td${c[3] ? ' class="num"' : (c[0]==="email"?' class="email"':"")}>${c[2](r)}</td>`).join("") + "</tr>").join("");
+    $("#aiLog").innerHTML = `<table>${head}${body}</table>`;
+    $$("#aiLog th.sortable").forEach((th) => th.addEventListener("click", () => {
+      const key = th.dataset.k;
+      aiSort = { key, dir: aiSort.key === key ? -aiSort.dir : -1 };
+      renderAiLog();
+    }));
+  }
+
+  function aiExportCsv() {
+    const cols = ["created_at","user_id","email","kind","model","prompt_tokens","completion_tokens","total_tokens","cost_usd","duration_ms","status"];
+    const esc2 = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+    const lines = [cols.join(",")].concat(aiRecent.map((r) => cols.map((c) => esc2(r[c])).join(",")));
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `caloria-ai-usage-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  $("#aiRefresh").addEventListener("click", loadAiCost);
+  $("#aiKind").addEventListener("change", loadAiCost);
+  $("#aiStart").addEventListener("change", loadAiCost);
+  $("#aiEnd").addEventListener("change", loadAiCost);
+  $("#aiSearch").addEventListener("input", renderAiLog);
+  $("#aiCsv").addEventListener("click", aiExportCsv);
+  $("#aiAuto").addEventListener("change", (e) => {
+    clearInterval(aiTimer); aiTimer = null;
+    if (e.target.checked) aiTimer = setInterval(loadAiCost, 30000);
+  });
+
+  /* ---------------- tabs / boot ---------------- */
+  const LOADERS = { business: loadBusiness, users: () => loadUsers(), subs: loadSubs, analytics: loadAnalytics, usage: loadUsage, aicost: loadAiCost };
+  function showTab(name) {
+    $$('#tabs button').forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
+    $$('section[data-panel]').forEach((s) => s.classList.toggle("hidden", s.dataset.panel !== name));
+    (LOADERS[name] || (() => {}))();
+  }
+  $$('#tabs button').forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+
+  function showApp(on) { $("#loginCard").classList.toggle("hidden", on); $("#app").classList.toggle("hidden", !on); $("#logoutBtn").style.display = on ? "" : "none"; }
+  async function boot() {
+    if (!token) return showApp(false);
+    try { await loadBusiness(); showApp(true); syncOv(); }
+    catch (e) { token = null; localStorage.removeItem(TOKEN_KEY); showApp(false);
+      if (e.status === 403) $("#loginMsg").innerHTML = `<span class="msg err">That account is not an administrator.</span>`; }
+  }
+  $("#loginBtn").addEventListener("click", async () => {
+    $("#loginMsg").textContent = "";
+    try { const r = await api("/api/auth/login", { method: "POST", body: { email: $("#email").value.trim(), password: $("#password").value } });
+      token = r.token; localStorage.setItem(TOKEN_KEY, token); await loadBusiness(); showApp(true); syncOv(); }
+    catch (e) { $("#loginMsg").innerHTML = `<span class="msg err">${esc(e.status === 403 ? "Not an administrator." : e.message)}</span>`;
+      if (e.status === 403) { token = null; localStorage.removeItem(TOKEN_KEY); } }
+  });
+  $("#logoutBtn").addEventListener("click", () => { token = null; localStorage.removeItem(TOKEN_KEY); showApp(false); });
+  boot();
+</script>
+</body>
+</html>
