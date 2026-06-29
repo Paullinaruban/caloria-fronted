@@ -9,4 +9,4 @@
      with NO trailing slash. Example:
          window.CALORIA_API = "https://caloria-api.onrender.com";
    ============================================================================ */
-window.CALORIA_API = "";
+window.CALORIA_API = "window.CALORIA_API = "https://caloria-api.onrender.com";
