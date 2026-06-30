@@ -295,6 +295,10 @@
       if (user.needs_verification) {
         // New (or unverified) account → prompt for the 6-digit code right away.
         openVerify(user.email);
+        // Don't show a fake "we emailed you" success if the email never went out.
+        if (res.verification_email_sent === false) {
+          toast("⚠️ We couldn't send your verification email right now. Tap “Resend”, or contact support.");
+        }
       } else {
         toast(authMode === "signup" ? "Welcome to Caloria 💗" : "Welcome back 💗");
       }
@@ -1649,7 +1653,17 @@
     } catch (err) { toast(err.message); }
   });
 
-  async function loadFeed() { try { renderPosts((await api("/api/community/feed")).posts, $("#clubFeedList")); } catch (_) {} }
+  async function loadFeed() {
+    const host = $("#clubFeedList");
+    if (!host.childElementCount) host.innerHTML = `<div class="feed-skeleton"></div><div class="feed-skeleton"></div>`;
+    try {
+      renderPosts((await api("/api/community/feed")).posts, host);
+      if (!host.childElementCount) host.innerHTML = `<p class="muted" style="text-align:center;padding:24px">No posts yet — be the first to share 💗</p>`;
+    } catch (_) {
+      host.innerHTML = `<div class="feed-error">Couldn't load the feed. <button class="btn btn-ghost btn-sm" id="feedRetry">Retry</button></div>`;
+      const r = document.getElementById("feedRetry"); if (r) r.addEventListener("click", loadFeed);
+    }
+  }
   async function loadWall() {
     try {
       const d = await api("/api/community/wall"); const host = $("#clubWallList");
@@ -1667,57 +1681,128 @@
   function renderPosts(posts, host) { host.innerHTML = ""; (posts || []).forEach((p) => host.appendChild(postCard(p))); }
   function avatarInner(o) { return o && o.avatar_img ? `<img src="${o.avatar_img}" alt=""/>` : esc((o && o.avatar) || "🌸"); }
 
+  const _likeBusy = new Set();  // prevents duplicate/rapid like requests per post
   function postCard(p) {
     const el = document.createElement("div"); el.className = "post";
     const imgs = (p.type === "transformation" && p.image && p.image2)
-      ? `<div class="post-imgs"><figure><img src="${p.image}"/><figcaption>Before</figcaption></figure><figure><img src="${p.image2}"/><figcaption>After</figcaption></figure></div>`
-      : (p.image ? `<img class="post-img" src="${p.image}"/>` : "");
+      ? `<div class="post-imgs"><figure><img loading="lazy" src="${p.image}"/><figcaption>Before</figcaption></figure><figure><img loading="lazy" src="${p.image2}"/><figcaption>After</figcaption></figure></div>`
+      : (p.image ? `<img class="post-img" loading="lazy" src="${p.image}"/>` : "");
+    const adminDel = (user && user.is_admin)
+      ? `<button class="post-del" data-delp="${p.id}" title="Delete post (admin)" aria-label="Delete post">🗑</button>` : "";
     el.innerHTML = `
       <div class="post-head">
         <div class="post-avatar">${avatarInner(p)}</div>
         <div class="post-who"><b>${esc(p.username)}</b><div class="post-meta">${timeAgo(p.created_at)} · ${esc(p.type)}</div></div>
         <span class="lvl-badge">L${p.level} · ${esc(p.level_name)}</span>
+        ${adminDel}
       </div>
       ${p.text ? `<p class="post-text">${esc(p.text)}</p>` : ""}
       ${imgs}
       <div class="post-actions">
-        <button class="like-btn${p.liked ? " liked" : ""}" data-like="${p.id}">${p.liked ? "💗" : "🤍"} <span>${p.likes}</span></button>
+        <button class="like-btn${p.liked ? " liked" : ""}" data-like="${p.id}" aria-pressed="${!!p.liked}">${p.liked ? "💗" : "🤍"} <span>${p.likes}</span></button>
         <button class="comment-toggle" data-ct="${p.id}">💬 <span>${p.comments}</span></button>
       </div>
       <div class="comments hidden" data-comments="${p.id}"></div>
       <div class="comment-add hidden" data-cadd="${p.id}">
-        <input type="text" placeholder="Add a comment…" data-cinput="${p.id}"/>
+        <input type="text" placeholder="Add a comment…" data-cinput="${p.id}" maxlength="400"/>
         <button class="btn btn-primary btn-sm" data-csend="${p.id}">Send</button>
       </div>`;
-    el.querySelector(`[data-like="${p.id}"]`).addEventListener("click", async (e) => {
-      try {
-        const r = await api("/api/community/like", { method: "POST", body: { post_id: p.id } });
-        const b = e.currentTarget; b.classList.toggle("liked", r.liked);
-        b.firstChild.textContent = (r.liked ? "💗" : "🤍") + " "; b.querySelector("span").textContent = r.likes;
-      } catch (_) {}
-    });
+    el.querySelector(`[data-like="${p.id}"]`).addEventListener("click", (e) => likePost(e.currentTarget, p.id));
     el.querySelector(`[data-ct="${p.id}"]`).addEventListener("click", () => toggleComments(el, p.id));
     el.querySelector(`[data-csend="${p.id}"]`).addEventListener("click", () => sendComment(el, p.id));
+    el.querySelector(`[data-cinput="${p.id}"]`).addEventListener("keydown", (e) => { if (e.key === "Enter") sendComment(el, p.id); });
+    if (adminDel) el.querySelector(`[data-delp="${p.id}"]`).addEventListener("click", () => adminDeletePost(p.id, el));
     return el;
   }
+
+  // Optimistic like — instant UI, reconciled with the server, reverted on error.
+  async function likePost(btn, id) {
+    if (_likeBusy.has(id)) return;  // ignore rapid double-taps
+    _likeBusy.add(id);
+    const span = btn.querySelector("span");
+    const wasLiked = btn.classList.contains("liked");
+    const prevCount = +span.textContent || 0;
+    const optLiked = !wasLiked;
+    btn.classList.toggle("liked", optLiked);
+    btn.setAttribute("aria-pressed", optLiked);
+    btn.firstChild.textContent = (optLiked ? "💗" : "🤍") + " ";
+    span.textContent = Math.max(0, prevCount + (optLiked ? 1 : -1));
+    btn.classList.remove("pop"); void btn.offsetWidth; btn.classList.add("pop");  // restart pop anim
+    try {
+      const r = await api("/api/community/like", { method: "POST", body: { post_id: id } });
+      btn.classList.toggle("liked", r.liked);
+      btn.setAttribute("aria-pressed", r.liked);
+      btn.firstChild.textContent = (r.liked ? "💗" : "🤍") + " ";
+      span.textContent = r.likes;  // server is the source of truth
+    } catch (err) {
+      btn.classList.toggle("liked", wasLiked);  // revert
+      btn.setAttribute("aria-pressed", wasLiked);
+      btn.firstChild.textContent = (wasLiked ? "💗" : "🤍") + " ";
+      span.textContent = prevCount;
+      toast("Couldn't update like — check your connection.");
+    } finally { _likeBusy.delete(id); }
+  }
+
   async function toggleComments(el, id) {
     const box = el.querySelector(`[data-comments="${id}"]`), add = el.querySelector(`[data-cadd="${id}"]`);
     const willShow = box.classList.contains("hidden");
     box.classList.toggle("hidden", !willShow); add.classList.toggle("hidden", !willShow);
-    if (willShow) { try { renderComments(box, (await api(`/api/community/comments?post_id=${id}`)).comments); } catch (_) {} }
+    if (willShow && box.dataset.loaded !== "1") {
+      box.innerHTML = `<p class="muted cmt-loading">Loading comments…</p>`;
+      try {
+        const d = await api(`/api/community/comments?post_id=${id}`);
+        renderComments(box, d.comments, id); box.dataset.loaded = "1";
+      } catch (_) { box.innerHTML = `<p class="muted" style="font-size:13px">Couldn't load comments — tap 💬 to retry.</p>`; }
+    }
   }
-  function renderComments(box, comments) {
-    box.innerHTML = (comments && comments.length)
-      ? comments.map((c) => `<div class="comment"><div class="cav">${avatarInner(c)}</div><div><b>${esc(c.username)}</b>${esc(c.text)}</div></div>`).join("")
-      : `<p class="muted" style="font-size:13px">Be the first to cheer her on 💗</p>`;
+  function renderComments(box, comments, postId) {
+    if (!comments || !comments.length) {
+      box.innerHTML = `<p class="muted" style="font-size:13px">Be the first to cheer her on 💗</p>`; return;
+    }
+    const canDel = user && user.is_admin;
+    box.innerHTML = comments.map((c) => `
+      <div class="comment" data-comment="${c.id}">
+        <div class="cav">${avatarInner(c)}</div>
+        <div class="comment-body"><b>${esc(c.username)}</b>${esc(c.text)}</div>
+        ${canDel ? `<button class="cmt-del" data-delc="${c.id}" title="Delete comment (admin)" aria-label="Delete comment">✕</button>` : ""}
+      </div>`).join("");
+    if (canDel) box.querySelectorAll("[data-delc]").forEach((b) =>
+      b.addEventListener("click", () => adminDeleteComment(b.dataset.delc, b, postId, box)));
   }
   async function sendComment(el, id) {
-    const inp = el.querySelector(`[data-cinput="${id}"]`), text = inp.value.trim(); if (!text) return;
+    const inp = el.querySelector(`[data-cinput="${id}"]`), btn = el.querySelector(`[data-csend="${id}"]`);
+    const text = inp.value.trim(); if (!text) return;
+    btn.disabled = true; inp.disabled = true;
     try {
       const d = await api("/api/community/comment", { method: "POST", body: { post_id: id, text } });
-      inp.value = ""; renderComments(el.querySelector(`[data-comments="${id}"]`), d.comments);
-      const span = el.querySelector(`[data-ct="${id}"] span`); span.textContent = (+span.textContent) + 1;
-    } catch (err) { toast(err.message); }
+      inp.value = "";
+      const box = el.querySelector(`[data-comments="${id}"]`);
+      renderComments(box, d.comments, id); box.dataset.loaded = "1";
+      const span = el.querySelector(`[data-ct="${id}"] span`); span.textContent = d.comments.length;
+    } catch (err) { toast(err.message || "Couldn't post comment."); }
+    finally { btn.disabled = false; inp.disabled = false; inp.focus(); }
+  }
+
+  // ---- admin moderation ----
+  async function adminDeletePost(id, el) {
+    if (!confirm("Delete this post for everyone? This cannot be undone.")) return;
+    try {
+      await api(`/api/admin/community/post?post_id=${id}`, { method: "DELETE" });
+      el.style.transition = "opacity .2s, transform .2s"; el.style.opacity = "0"; el.style.transform = "scale(.97)";
+      setTimeout(() => el.remove(), 200);
+      toast("Post deleted.");
+    } catch (err) { toast(err.message || "Delete failed."); }
+  }
+  async function adminDeleteComment(cid, btn, postId, box) {
+    if (!confirm("Delete this comment? This cannot be undone.")) return;
+    try {
+      await api(`/api/admin/community/comment?comment_id=${cid}`, { method: "DELETE" });
+      const row = btn.closest(".comment"); if (row) row.remove();
+      // keep the post's comment count in sync
+      const span = document.querySelector(`[data-ct="${postId}"] span`);
+      if (span) span.textContent = Math.max(0, (+span.textContent || 1) - 1);
+      if (!box.querySelector(".comment")) renderComments(box, [], postId);
+    } catch (err) { toast(err.message || "Delete failed."); }
   }
 
   async function loadProfile() {

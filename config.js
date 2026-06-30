@@ -1,12 +1,2 @@
-/* ============================================================================
-   Caloria — deployment configuration
-   ----------------------------------------------------------------------------
-   Set this to the address of your deployed backend (the Render URL).
-
-   • Leave it EMPTY ("") for local development — the app then talks to
-     http://localhost:8787 automatically.
-   • After you deploy the backend to Render, paste the Render URL here,
-     with NO trailing slash. Example:
-         window.CALORIA_API = "https://caloria-api.onrender.com";
-   ============================================================================ */
+// Caloria production config — points the frontend at the Render backend.
 window.CALORIA_API = "https://caloria-api.onrender.com";
