@@ -534,6 +534,18 @@ a { color: inherit; text-decoration: none; }
 .feed-skeleton { height: 180px; border-radius: var(--r-lg); margin-bottom: 14px; background: linear-gradient(100deg, rgba(255,255,255,.5) 30%, rgba(255,255,255,.85) 50%, rgba(255,255,255,.5) 70%); background-size: 200% 100%; animation: feedShimmer 1.3s linear infinite; box-shadow: var(--sh-sm); }
 @keyframes feedShimmer { 0%{ background-position: 200% 0 } 100%{ background-position: -200% 0 } }
 .feed-error { text-align: center; padding: 24px; color: var(--ink-soft); font-size: 14px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+
+/* ===================== mandatory subscription gate ===================== */
+.sub-gate { position: fixed; inset: 0; z-index: 300; background: var(--grad-hero, #fff5f9); background-attachment: fixed; display: grid; place-items: start center; overflow-y: auto; padding: 44px 18px; }
+.sub-gate-card { width: 100%; max-width: 440px; border-radius: var(--r-lg); padding: 28px 24px 24px; text-align: center; box-shadow: var(--sh-lg); }
+.sub-gate-logo { width: 64px; height: 64px; border-radius: 16px; object-fit: contain; display: block; margin: 0 auto 12px; }
+.sub-gate-card h2 { font-family: var(--font-head); font-size: 26px; line-height: 1.15; margin: 10px 0 6px; }
+.sub-gate-card > .muted { font-size: 14px; }
+.sub-gate-card .plan-feats { text-align: left; margin: 16px 0; }
+.sub-gate-card .bill-toggle { margin: 6px 0 14px; }
+.sub-gate-logout { display: block; margin: 16px auto 0; background: none; border: none; color: var(--ink-soft); font-size: 13px; text-decoration: underline; cursor: pointer; }
+/* When gated, no app content or navigation is reachable */
+#app.gated #appMain, #app.gated .tabbar, #app.gated .notif-bell, #app.gated .plan-chip { display: none !important; }
 .comment .cav { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--pink-100); font-size: 14px; flex-shrink: 0; }
 .comment b { font-weight: 700; margin-right: 4px; }
 .comment-add { display: flex; gap: 8px; padding: 0 16px 14px; }

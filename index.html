@@ -21,7 +21,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
 
   <link rel="stylesheet" href="css/fonts.css" />
-  <link rel="stylesheet" href="css/styles.css?v=31" />
+  <link rel="stylesheet" href="css/styles.css?v=32" />
 </head>
 <body>
 
@@ -141,8 +141,7 @@
     <section id="founder" class="section founder">
       <div class="founder-card glass-strong">
         <div class="founder-photo">
-          <img class="founder-img" src="assets/founder.jpg?v=2" alt="Paullina Ruban — Founder"
-               onerror="this.style.display='none';this.nextElementSibling.style.display='grid';"/>
+          <img class="founder-img" src="assets/founder.jpg?v=2" alt="Paullina Ruban — Founder"/>
           <div class="photo-ph" style="display:none">📷<span>Paullina Ruban</span></div>
         </div>
         <div class="founder-copy">
@@ -363,7 +362,7 @@
   <div class="modal-overlay" id="paywallModal">
     <div class="modal glass-strong paywall">
       <button class="modal-close" id="paywallClose">×</button>
-      <span class="pill pill-aqua" id="paywallTrial">7-day free trial</span>
+      <span class="pill pill-aqua" id="paywallTrial">Premium</span>
       <h2 id="paywallTitle">Join the Supermodel Wellness Club</h2>
       <p class="modal-sub" id="paywallReason">Go unlimited and get the full platform.</p>
       <ul class="paywall-feats">
@@ -378,7 +377,7 @@
       </div>
       <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
       <button class="btn btn-glow btn-block btn-lg" id="paywallCheckout">Join The Club</button>
-      <p class="muted paywall-note" id="paywallNote">Cancel anytime before the trial ends — no charge.</p>
+      <p class="muted paywall-note" id="paywallNote">Cancel anytime.</p>
     </div>
   </div>
 
@@ -388,7 +387,7 @@
       <a class="brand" data-view="dashboard"><img class="brand-mascot" src="/assets/logo-mascot.png?v=1" alt="Caloria" /><span class="brand-name">Caloria</span></a>
       <div class="app-nav-right">
         <button class="notif-bell" id="notifBell" aria-label="Notifications">🔔<span class="notif-dot hidden" id="notifDot"></span></button>
-        <span class="plan-chip" id="planChip">Free</span>
+        <span class="plan-chip hidden" id="planChip"></span>
         <button class="btn btn-ghost btn-sm" id="logoutBtn">Log out</button>
       </div>
     </header>
@@ -398,6 +397,30 @@
       <div class="notif-panel glass-strong" id="notifPanel">
         <div class="notif-head"><b>Your notifications</b><button class="notif-close" id="notifClose">×</button></div>
         <div class="notif-list" id="notifList"></div>
+      </div>
+    </div>
+
+    <!-- MANDATORY SUBSCRIPTION GATE — shown after login until the user subscribes -->
+    <div class="sub-gate hidden" id="subGate">
+      <div class="sub-gate-card glass-strong">
+        <img class="sub-gate-logo" src="/assets/logo-mascot.png?v=1" alt="Caloria" />
+        <span class="pill pill-aqua">Members only</span>
+        <h2>Choose your plan to continue</h2>
+        <p class="muted">Caloria is a private, members-only wellness club. Pick a plan to unlock everything.</p>
+        <ul class="plan-feats">
+          <li>✓ Unlimited AI food scans</li>
+          <li>✓ Personalized meal plans + diet modes</li>
+          <li>✓ AI workout generator + Coach Chat</li>
+          <li>✓ Community, progress tracking &amp; more</li>
+        </ul>
+        <div class="bill-toggle">
+          <button class="bt-opt active" data-interval="monthly">Monthly · <b id="sgMonthly">$19.99</b></button>
+          <button class="bt-opt" data-interval="yearly">Yearly · <b id="sgYearly">$99</b></button>
+        </div>
+        <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
+        <button class="btn btn-glow btn-block btn-lg" id="sgCheckout">Continue to secure checkout →</button>
+        <p class="muted checkout-note" id="sgNote"></p>
+        <button class="sub-gate-logout" id="sgLogout">Log out</button>
       </div>
     </div>
 
@@ -480,9 +503,9 @@
 
         <button class="upsell-banner glass hidden" id="dashUpgrade">
           <div class="ub-left"><span class="ub-emoji">✨</span>
-            <div><b id="ubTitle">Start your 7-day free trial</b><small id="ubSub">Unlimited scans, meal plans, workouts &amp; AI coach.</small></div>
+            <div><b id="ubTitle">Unlock Caloria Premium</b><small id="ubSub">Unlimited scans, meal plans, workouts &amp; AI coach.</small></div>
           </div>
-          <span class="ub-cta">Try free →</span>
+          <span class="ub-cta">Upgrade →</span>
         </button>
 
         <div class="dash-actions">
@@ -822,7 +845,7 @@
               <button class="btn btn-ghost btn-sm" id="acctEditPic">Edit Profile Picture</button>
             </span></div>
           <div class="acct-row"><span>Signed in as</span><b id="acctEmail"></b></div>
-          <div class="acct-row"><span>Current plan</span><b id="acctPlan">Free</b></div>
+          <div class="acct-row"><span>Current plan</span><b id="acctPlan">—</b></div>
           <div class="acct-row"><span>Scans used</span><b id="acctScans">0</b></div>
         </div>
 
@@ -886,7 +909,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="config.js?v=qa4"></script>
-  <script src="js/app.js?v=40"></script>
+  <script src="config.js?v=qa5"></script>
+  <script src="js/app.js?v=43"></script>
 </body>
 </html>

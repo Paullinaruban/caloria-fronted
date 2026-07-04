@@ -10,3 +10,14 @@
   from = "/admin/analytics"
   to = "/admin.html"
   status = 200
+
+# Security headers on every response (clickjacking, MIME-sniffing, transport, CSP).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Permissions-Policy = "geolocation=(), microphone=(), payment=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://caloria-api.onrender.com https://*.onrender.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"

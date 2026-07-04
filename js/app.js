@@ -74,6 +74,7 @@
     // all, fall back to a safe state rather than a white screen.
     if (siteShown) return;
     if (!appShown) return revealLanding();
+    if (user && !hasAccess()) return showGate();   // gated users stay on the paywall
     if (!hasActiveView) showView(user && user.targets ? "dashboard" : user ? "onboard" : "dashboard");
   }
   window.addEventListener("error", function (e) {
@@ -81,12 +82,47 @@
     ensureVisible();
   });
 
+  // Caloria is subscription-only: access requires an ACTIVE paid plan.
+  // (The backend reports plan === "premium" for active/trialing/past_due
+  //  subscribers, and for admin / dev-unlimited accounts.)
+  function hasAccess() { return !!(user && user.plan === "premium"); }
+
+  function updatePlanChip() {
+    const chip = $("#planChip"); if (!chip) return;
+    // Never show a "Free" badge — either the active tier or nothing.
+    if (hasAccess()) { chip.textContent = "Premium ✨"; chip.classList.add("premium"); chip.classList.remove("hidden"); }
+    else { chip.classList.add("hidden"); }
+  }
+
+  function showGate() {
+    $("#app").classList.add("gated");                    // CSS hides nav/tabbar/notifs
+    $$(".view").forEach((v) => v.classList.remove("active"));
+    const g = $("#subGate"); if (g) g.classList.remove("hidden");
+    applyPricing();
+    updateGateForVerification();
+  }
+  function hideGate() {
+    $("#app").classList.remove("gated");
+    const g = $("#subGate"); if (g) g.classList.add("hidden");
+  }
+  function updateGateForVerification() {
+    const note = $("#sgNote"), btn = $("#sgCheckout");
+    if (!btn) return;
+    if (user && user.needs_verification) {
+      note && (note.textContent = "Verify your email first, then choose a plan.");
+    } else {
+      note && (note.textContent = "");
+      btn.textContent = "Continue to secure checkout →";
+    }
+  }
+
   function route() {
     if (user) {
       $("#site").classList.add("hidden");
       $("#app").classList.remove("hidden");
-      $("#planChip").textContent = user.plan === "premium" ? "Premium ✨" : "Free";
-      $("#planChip").classList.toggle("premium", user.plan === "premium");
+      updatePlanChip();
+      if (!hasAccess()) { showGate(); return; }   // ← HARD PAYWALL: no app until subscribed
+      hideGate();
       if (!user.targets) { obReset(); showView("onboard"); }
       else { showView("dashboard"); loadDashboard(); }
     } else {
@@ -95,7 +131,24 @@
     }
   }
 
+  // Poll for the subscription to activate after returning from Stripe Checkout
+  // (the webhook may land a moment after the redirect).
+  async function confirmSubscription() {
+    showGate();
+    const note = $("#sgNote"), btn = $("#sgCheckout");
+    if (btn) btn.disabled = true;
+    if (note) note.textContent = "Confirming your subscription…";
+    for (let i = 0; i < 15; i++) {
+      try { user = (await api("/api/me")).user; } catch (_) {}
+      if (hasAccess()) { if (btn) btn.disabled = false; toast("Welcome to Caloria Premium 👑"); route(); return; }
+      await new Promise((r) => setTimeout(r, 2500));
+    }
+    if (btn) btn.disabled = false;
+    if (note) note.textContent = "Payment received — still activating. Please refresh in a moment.";
+  }
+
   function showView(name) {
+    if (user && !hasAccess()) { showGate(); return; }   // block ALL navigation until subscribed
     $$(".view").forEach((v) => v.classList.toggle("active", v.dataset.view === name));
     $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.view === name));
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -123,14 +176,14 @@
     $("#upYearly") && ($("#upYearly").textContent = cfg.price_yearly);
     $("#pwMonthly") && ($("#pwMonthly").textContent = cfg.price_monthly);
     $("#pwYearly") && ($("#pwYearly").textContent = cfg.price_yearly);
-    const trial = cfg.trial_days > 0 ? `${cfg.trial_days}-day free trial` : "";
-    const trialCta = "Join The Club";
-    $("#paywallTrial") && ($("#paywallTrial").textContent = trial || "Premium");
-    $("#paywallTrial") && $("#paywallTrial").classList.toggle("hidden", !trial);
-    $("#paywallCheckout") && ($("#paywallCheckout").textContent = trialCta);
-    $("#paywallNote") && ($("#paywallNote").textContent = trial ? "Cancel anytime before the trial ends — no charge." : "Cancel anytime.");
+    $("#sgMonthly") && ($("#sgMonthly").textContent = cfg.price_monthly);
+    $("#sgYearly") && ($("#sgYearly").textContent = cfg.price_yearly);
+    // Subscription-only: no trial anywhere.
+    $("#paywallTrial") && ($("#paywallTrial").textContent = "Premium");
+    $("#paywallCheckout") && ($("#paywallCheckout").textContent = "Join The Club");
+    $("#paywallNote") && ($("#paywallNote").textContent = "Cancel anytime.");
     $("#ubTitle") && ($("#ubTitle").textContent = "Join the Supermodel Wellness Club");
-    $("#checkoutBtn") && ($("#checkoutBtn").textContent = trialCta);
+    $("#checkoutBtn") && ($("#checkoutBtn").textContent = "Join The Club");
   }
 
   // billing toggles (landing + account)
@@ -272,6 +325,11 @@
     const p = new URLSearchParams(location.search);
     const rt = p.get("reset");
     if (rt) { openReset(rt); history.replaceState({}, "", location.pathname); }
+    const co = p.get("checkout");
+    if (co) {
+      history.replaceState({}, "", location.pathname);
+      if (co === "success" && user && !hasAccess()) { await confirmSubscription(); }
+    }
   }
 
   $("#authForm").addEventListener("submit", async (e) => {
@@ -309,11 +367,13 @@
     }
   });
 
-  $("#logoutBtn").addEventListener("click", async () => {
+  async function doLogout() {
     try { await api("/api/auth/logout", { method: "POST" }); } catch (_) {}
     token = null; user = null; localStorage.removeItem(TOKEN_KEY);
+    hideGate();
     route();
-  });
+  }
+  $("#logoutBtn").addEventListener("click", doLogout);
 
   /* ===================== onboarding wizard (premium, multi-step) ===================== */
   const NOW_YEAR = new Date().getFullYear();
@@ -379,9 +439,10 @@
       { v: "flexible", label: "Flexible schedule", emoji: "🌤️" },
     ] },
     { key: "__preview", type: "preview", title: "Your plan is ready ✨" },
-    { key: "__paywall", type: "paywall", title: "Unlock your transformation" },
   ];
-  const OB_PREVIEW = OB_STEPS.length - 2;
+  // Payment happens BEFORE onboarding now (subscription-only), so there is no
+  // onboarding paywall step — the preview is the final step.
+  const OB_PREVIEW = OB_STEPS.length - 1;
   let obIndex = 0, obAns = {}, obSubmitted = false;
 
   function obReset() { obIndex = 0; obAns = {}; obSubmitted = false; obRender(); }
@@ -431,16 +492,6 @@
           </div>
         </div>
         <p class="ob-sub">Plus a personalized training plan, AI coaching and meal plans — all tuned to you.</p>`;
-    } else if (s.type === "paywall") {
-      host.innerHTML = `<h3 class="ob-title">${s.title}</h3>
-        <p class="ob-sub">Subscribe to unlock everything built for you — ${cfg.price_monthly}/month or ${cfg.price_yearly}/year.</p>
-        <ul class="paywall-feats">
-          <li>✓ Personalized workout plans &amp; AI coaching</li>
-          <li>✓ Database-driven meal plans for your goal</li>
-          <li>✓ Photo calorie scanning &amp; progress tracking</li>
-        </ul>
-        <button class="btn btn-glow btn-block btn-lg" id="obTrial">Unlock my plan</button>`;
-      const tb = $("#obTrial"); if (tb) tb.addEventListener("click", () => openPaywall("Subscribe to unlock your plan."));
     }
   }
 
@@ -495,7 +546,7 @@
       const v = +$("#obInput").value;
       obAns[s.key] = Math.max(s.min, Math.min(s.max, v || s.def));
     }
-    if (s.type === "paywall") { toast("Welcome to the Supermodel Wellness Club 👑"); showView("dashboard"); return; }   // finish
+    if (s.type === "preview") { toast("Welcome to the Supermodel Wellness Club 👑"); showView("dashboard"); return; }   // finish (last step)
     // submit right before showing the preview so targets are real
     if (obIndex === OB_PREVIEW - 1 && !obSubmitted) {
       const btn = $("#obNext"); btn.disabled = true; btn.textContent = "Building your plan…";
@@ -943,7 +994,7 @@
       const el = document.createElement("div");
       el.className = "meal-item";
       el.innerHTML = `
-        <div class="meal-thumb">${m.image ? `<img src="${m.image}" alt=""/>` : "🍽️"}</div>
+        <div class="meal-thumb">${m.image ? `<img src="${esc(m.image)}" alt=""/>` : "🍽️"}</div>
         <div class="meal-info">
           <h4>${esc(m.name || "Meal")}</h4>
           <div class="meal-macros">P ${r1(m.protein)}g · C ${r1(m.carbs)}g · F ${r1(m.fats)}g${m.fiber != null ? ` · Fb ${r1(m.fiber)}g` : ""}</div>
@@ -1496,7 +1547,7 @@
   function renderAccount() {
     if (!user) return;
     $("#acctEmail").textContent = user.email;
-    $("#acctPlan").textContent = user.plan === "premium" ? "Premium ✨" : "Free";
+    $("#acctPlan").textContent = user.plan === "premium" ? "Premium ✨" : "None";
     $("#acctScans").textContent = user.scans_used;
     const premium = user.plan === "premium";
     $("#upgradeCard").classList.toggle("hidden", premium);
@@ -1524,6 +1575,15 @@
     } finally { if (btn) btn.disabled = false; }
   }
   $("#checkoutBtn").addEventListener("click", (e) => startCheckout(e.currentTarget));
+
+  // Mandatory subscription gate (shown after login until the user subscribes).
+  const sgCheckout = $("#sgCheckout");
+  if (sgCheckout) sgCheckout.addEventListener("click", (e) => {
+    if (user && user.needs_verification) { openVerify(user.email); return; }  // verify before paying
+    startCheckout(e.currentTarget);
+  });
+  const sgLogout = $("#sgLogout");
+  if (sgLogout) sgLogout.addEventListener("click", doLogout);
 
   /* ===================== paywall (conversion) ===================== */
   const paywall = $("#paywallModal");
@@ -1634,8 +1694,8 @@
   }
   function renderComposerPhotos() {
     const h = $("#composerPhotos"); h.innerHTML = "";
-    if (composerImg) h.insertAdjacentHTML("beforeend", `<img src="${composerImg}" alt=""/>`);
-    if (composerImg2) h.insertAdjacentHTML("beforeend", `<img src="${composerImg2}" alt=""/>`);
+    if (composerImg) h.insertAdjacentHTML("beforeend", `<img src="${esc(composerImg)}" alt=""/>`);
+    if (composerImg2) h.insertAdjacentHTML("beforeend", `<img src="${esc(composerImg2)}" alt=""/>`);
   }
   $("#composerFile").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) readImageFile(f, (d) => { composerImg = d; renderComposerPhotos(); }); e.target.value = ""; });
   $("#composerFile2").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) readImageFile(f, (d) => { composerImg2 = d; renderComposerPhotos(); }); e.target.value = ""; });
@@ -1679,14 +1739,14 @@
     if (s < 86400) return Math.floor(s / 3600) + "h"; return Math.floor(s / 86400) + "d";
   }
   function renderPosts(posts, host) { host.innerHTML = ""; (posts || []).forEach((p) => host.appendChild(postCard(p))); }
-  function avatarInner(o) { return o && o.avatar_img ? `<img src="${o.avatar_img}" alt=""/>` : esc((o && o.avatar) || "🌸"); }
+  function avatarInner(o) { return o && o.avatar_img ? `<img src="${esc(o.avatar_img)}" alt=""/>` : esc((o && o.avatar) || "🌸"); }
 
   const _likeBusy = new Set();  // prevents duplicate/rapid like requests per post
   function postCard(p) {
     const el = document.createElement("div"); el.className = "post";
     const imgs = (p.type === "transformation" && p.image && p.image2)
-      ? `<div class="post-imgs"><figure><img loading="lazy" src="${p.image}"/><figcaption>Before</figcaption></figure><figure><img loading="lazy" src="${p.image2}"/><figcaption>After</figcaption></figure></div>`
-      : (p.image ? `<img class="post-img" loading="lazy" src="${p.image}"/>` : "");
+      ? `<div class="post-imgs"><figure><img loading="lazy" src="${esc(p.image)}"/><figcaption>Before</figcaption></figure><figure><img loading="lazy" src="${esc(p.image2)}"/><figcaption>After</figcaption></figure></div>`
+      : (p.image ? `<img class="post-img" loading="lazy" src="${esc(p.image)}"/>` : "");
     const adminDel = (user && user.is_admin)
       ? `<button class="post-del" data-delp="${p.id}" title="Delete post (admin)" aria-label="Delete post">🗑</button>` : "";
     el.innerHTML = `
@@ -1848,6 +1908,18 @@
   /* ---------- helpers ---------- */
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
   const r1 = (n) => Math.round((n || 0) * 10) / 10;
+
+  /* ---------- image fallbacks ---------- */
+  // Moved out of an inline onerror handler so the CSP can drop
+  // script-src 'unsafe-inline'. Hides a broken image and reveals its placeholder.
+  (function wireImageFallbacks() {
+    document.querySelectorAll(".founder-img").forEach((img) => {
+      const ph = img.nextElementSibling;
+      const fail = () => { img.style.display = "none"; if (ph) ph.style.display = "grid"; };
+      img.addEventListener("error", fail);
+      if (img.complete && img.naturalWidth === 0) fail();  // already failed before JS ran
+    });
+  })();
 
   /* ---------- go ---------- */
   boot();
