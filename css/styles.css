@@ -281,6 +281,15 @@ a { color: inherit; text-decoration: none; }
 .obp-macros { display: flex; justify-content: space-around; margin-top: 16px; }
 .obp-macros b { font-family: var(--font-head); font-size: 22px; display: block; }
 .obp-macros span { font-size: 12px; opacity: .9; }
+/* conversion screen — "your plan is ready" + what unlocks */
+.ob-ready { display: inline-block; margin-bottom: 12px; }
+.ob-unlock-head { font-weight: 700; color: var(--ink); margin: 4px 0 12px; font-size: 15px; }
+.ob-unlock { display: grid; gap: 10px; text-align: left; margin-bottom: 16px; }
+.ob-unlock-item { display: flex; gap: 12px; align-items: flex-start; background: var(--white); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; box-shadow: var(--sh-sm); }
+.ob-unlock-item .emo { font-size: 22px; line-height: 1.25; }
+.ob-unlock-item b { display: block; font-size: 14.5px; color: var(--ink); margin-bottom: 1px; }
+.ob-unlock-item small { color: var(--ink-soft); font-size: 12.5px; line-height: 1.35; }
+.ob-unlock-foot { text-align: center; font-weight: 600; }
 
 /* ---------- dashboard ---------- */
 .dash-head h2 { font-size: 28px; } .dash-head { margin-bottom: 16px; }
@@ -451,6 +460,7 @@ a { color: inherit; text-decoration: none; }
 .upgrade-card { border-radius: var(--r-lg); padding: 26px; box-shadow: var(--sh-md); }
 .upgrade-card h3 { font-size: 24px; margin: 12px 0; }
 .checkout-note { text-align: center; font-size: 13px; margin-top: 12px; }
+.checkout-note.checkout-error { color: var(--rose-deep); font-weight: 600; }
 
 /* ---------- paywall modal ---------- */
 .paywall { max-width: 440px; text-align: center; }
@@ -546,6 +556,8 @@ a { color: inherit; text-decoration: none; }
 .sub-gate-logout { display: block; margin: 16px auto 0; background: none; border: none; color: var(--ink-soft); font-size: 13px; text-decoration: underline; cursor: pointer; }
 /* When gated, no app content or navigation is reachable */
 #app.gated #appMain, #app.gated .tabbar, #app.gated .notif-bell, #app.gated .plan-chip { display: none !important; }
+/* Onboarding funnel: keep the questionnaire visible but hide app navigation. */
+#app.onboarding .tabbar, #app.onboarding .notif-bell, #app.onboarding .plan-chip { display: none !important; }
 .comment .cav { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--pink-100); font-size: 14px; flex-shrink: 0; }
 .comment b { font-weight: 700; margin-right: 4px; }
 .comment-add { display: flex; gap: 8px; padding: 0 16px 14px; }

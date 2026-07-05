@@ -96,6 +96,7 @@
 
   function showGate() {
     $("#app").classList.add("gated");                    // CSS hides nav/tabbar/notifs
+    $("#app").classList.remove("onboarding");            // leaving the funnel
     $$(".view").forEach((v) => v.classList.remove("active"));
     const g = $("#subGate"); if (g) g.classList.remove("hidden");
     applyPricing();
@@ -117,17 +118,40 @@
   }
 
   function route() {
-    if (user) {
-      $("#site").classList.add("hidden");
-      $("#app").classList.remove("hidden");
-      updatePlanChip();
-      if (!hasAccess()) { showGate(); return; }   // ← HARD PAYWALL: no app until subscribed
-      hideGate();
-      if (!user.targets) { obReset(); showView("onboard"); }
-      else { showView("dashboard"); loadDashboard(); }
-    } else {
+    if (!user) {
+      // STEP 1: visitors always get the public landing page — never the paywall.
       $("#app").classList.add("hidden");
       $("#site").classList.remove("hidden");
+      return;
+    }
+    $("#site").classList.add("hidden");
+    $("#app").classList.remove("hidden");
+    updatePlanChip();
+
+    // Premium members go straight into the app (STEP 11: returning premium → app).
+    if (hasAccess()) {
+      hideGate();
+      if (!user.targets) { obReset(); showView("onboard"); }   // premium but not onboarded (rare)
+      else { showView("dashboard"); loadDashboard(); }
+      return;
+    }
+
+    // --- Signed in, not yet subscribed ---
+    // STEP 3: verification is mandatory before onboarding can begin.
+    if (user.needs_verification) {
+      hideGate(); obReset(); showView("onboard");   // onboarding shell as backdrop
+      openVerify(user.email);                        // modal blocks until verified
+      return;
+    }
+
+    // STEP 4-6: verified but not subscribed. New users run the onboarding
+    // questionnaire → personalized results → conversion screen. Returning users
+    // who already onboarded skip straight to the subscription screen (STEP 11:
+    // never repeat onboarding).
+    if (!user.targets) {
+      hideGate(); obReset(); showView("onboard");
+    } else {
+      showGate();
     }
   }
 
@@ -148,7 +172,13 @@
   }
 
   function showView(name) {
-    if (user && !hasAccess()) { showGate(); return; }   // block ALL navigation until subscribed
+    // Non-premium users may only enter the onboarding/conversion funnel; every
+    // real app view stays behind the paywall. (The backend also enforces this on
+    // every API call, so this is UX only — not the security boundary.)
+    if (user && !hasAccess() && name !== "onboard") { showGate(); return; }
+    // Hide the app chrome (tabbar/bell/plan chip) during the onboarding funnel so
+    // it reads as a focused, premium flow rather than the full app.
+    $("#app").classList.toggle("onboarding", name === "onboard");
     $$(".view").forEach((v) => v.classList.toggle("active", v.dataset.view === name));
     $$(".tab").forEach((t) => t.classList.toggle("active", t.dataset.view === name));
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -440,8 +470,9 @@
     ] },
     { key: "__preview", type: "preview", title: "Your plan is ready ✨" },
   ];
-  // Payment happens BEFORE onboarding now (subscription-only), so there is no
-  // onboarding paywall step — the preview is the final step.
+  // The final step is the conversion screen (results + what unlocks). Its CTA
+  // checks Premium: members enter the app, everyone else gets the subscription
+  // screen. Payment now comes AFTER onboarding, not before.
   const OB_PREVIEW = OB_STEPS.length - 1;
   let obIndex = 0, obAns = {}, obSubmitted = false;
 
@@ -453,7 +484,7 @@
     $("#obBar").style.width = ((obIndex + 1) / OB_STEPS.length * 100) + "%";
     $("#obBack").style.visibility = obIndex === 0 ? "hidden" : "visible";
     const next = $("#obNext");
-    next.textContent = s.type === "paywall" ? "Enter Caloria 💗" : s.type === "preview" ? "Continue" : "Continue";
+    next.textContent = s.type === "preview" ? "Unlock My Plan ✨" : "Continue";
     next.disabled = false;
     const host = $("#obStep");
 
@@ -480,19 +511,59 @@
         }).join("") + `</div>`;
       $$("#obStep .ob-opt").forEach((b) => b.addEventListener("click", () => obPick(s, +b.dataset.i)));
     } else if (s.type === "preview") {
-      const t = (user && user.targets) || {};
-      host.innerHTML = `<h3 class="ob-title">${s.title}</h3>
-        <p class="ob-sub">Built for your ${esc(obAns.physique || "goal")} goal — here are your daily targets.</p>
-        <div class="ob-preview">
-          <div class="obp-cal"><b>${t.calories || "—"}</b><span>kcal / day</span></div>
-          <div class="obp-macros">
-            <div><b>${t.protein || "—"}g</b><span>Protein</span></div>
-            <div><b>${t.carbs || "—"}g</b><span>Carbs</span></div>
-            <div><b>${t.fat || "—"}g</b><span>Fat</span></div>
-          </div>
-        </div>
-        <p class="ob-sub">Plus a personalized training plan, AI coaching and meal plans — all tuned to you.</p>`;
+      host.innerHTML = renderConversion();
     }
+  }
+
+  /* ---------- conversion screen (results + what unlocks) ---------- */
+  // Goal → training focus, kept accurate to what the workout generator builds.
+  const WORKOUT_FOCUS = {
+    fat_loss: "fat-loss & toning sessions",
+    muscle_gain: "muscle-sculpting strength work",
+    maintenance: "balanced strength & conditioning",
+  };
+  const LEVEL_LABEL = { beginner: "beginner", intermediate: "intermediate", advanced: "advanced" };
+  const DIET_LABEL = {
+    none: "balanced", vegetarian: "vegetarian", vegan: "vegan",
+    pescatarian: "pescatarian", high_protein: "high-protein",
+  };
+
+  function renderConversion() {
+    const t = (user && user.targets) || {};
+    const physique = obAns.physique || "wellness";
+    const focus = WORKOUT_FOCUS[obAns.goal] || "personalized training sessions";
+    const level = LEVEL_LABEL[obAns.experience] || "your level";
+    const diet = DIET_LABEL[obAns.diet_pref] || "balanced";
+    // Feature teasers — exciting but accurate to what the app actually delivers.
+    const unlocks = [
+      ["🍽️", "Your personalized meal plan", `${diet[0].toUpperCase() + diet.slice(1)} meals tuned to your calorie & macro targets.`],
+      ["🤖", "Your AI Wellness Coach", "Ask anything, anytime — guidance built around your goal."],
+      ["📸", "AI Meal Scan", "Snap a photo and get instant calories, protein, carbs & fats."],
+      ["🏋️", "Your workout program", `${level[0].toUpperCase() + level.slice(1)}-level ${focus}, ready to start.`],
+      ["💬", "The Caloria community", "A private circle of women on the same journey."],
+      ["🏆", "Progress tracking", "See your streaks and transformation over time."],
+    ];
+    return `
+      <span class="pill pill-aqua ob-ready">Your plan is ready ✨</span>
+      <h3 class="ob-title">Your personalized wellness plan is ready</h3>
+      <p class="ob-sub">Built for your ${esc(physique)} goal — here are your daily targets.</p>
+      <div class="ob-preview">
+        <div class="obp-cal"><b>${t.calories || "—"}</b><span>kcal / day</span></div>
+        <div class="obp-macros">
+          <div><b>${t.protein || "—"}g</b><span>Protein</span></div>
+          <div><b>${t.carbs || "—"}g</b><span>Carbs</span></div>
+          <div><b>${t.fat || "—"}g</b><span>Fat</span></div>
+        </div>
+      </div>
+      <p class="ob-unlock-head">Unlock everything the moment you join 👇</p>
+      <div class="ob-unlock">
+        ${unlocks.map(([e, title, sub]) => `
+          <div class="ob-unlock-item">
+            <span class="emo">${e}</span>
+            <div><b>${esc(title)}</b><small>${esc(sub)}</small></div>
+          </div>`).join("")}
+      </div>
+      <p class="ob-sub ob-unlock-foot">You're one step away from your full transformation 💗</p>`;
   }
 
   function updateObNextState() {
@@ -546,7 +617,13 @@
       const v = +$("#obInput").value;
       obAns[s.key] = Math.max(s.min, Math.min(s.max, v || s.def));
     }
-    if (s.type === "preview") { toast("Welcome to the Supermodel Wellness Club 👑"); showView("dashboard"); return; }   // finish (last step)
+    if (s.type === "preview") {
+      // STEP 8: only NOW check Premium. Members enter the app; everyone else sees
+      // the subscription screen (Monthly $19.99 / Yearly $99).
+      if (hasAccess()) { toast("Welcome to the Supermodel Wellness Club 👑"); showView("dashboard"); }
+      else { showGate(); }
+      return;
+    }
     // submit right before showing the preview so targets are real
     if (obIndex === OB_PREVIEW - 1 && !obSubmitted) {
       const btn = $("#obNext"); btn.disabled = true; btn.textContent = "Building your plan…";
@@ -1563,16 +1640,29 @@
     if (ep) ep.onclick = () => { showView("club"); setClubPane("profile"); };
   }
 
+  // Surface a checkout problem loudly — a persistent line on the gate AND a toast,
+  // never a silent no-op. (Root-caused: the button/endpoint work; failures only
+  // happen when Stripe can't complete, so make that impossible to miss.)
+  function checkoutError(msg) {
+    console.error("[caloria] checkout could not start:", msg);
+    const note = $("#sgNote");
+    if (note) { note.textContent = msg; note.classList.add("checkout-error"); }
+    toast(msg);
+  }
+
   async function startCheckout(btn) {
-    if (btn) { btn.disabled = true; }
+    if (btn) { btn.disabled = true; btn.dataset.prev = btn.textContent; btn.textContent = "Opening secure checkout…"; }
+    const note = $("#sgNote"); if (note) note.classList.remove("checkout-error");
     try {
       const res = await api("/api/billing/checkout", { method: "POST", body: { interval: billingInterval } });
-      if (res.url) { window.location.href = res.url; return; }
-      toast("Could not start checkout.");
+      if (res && res.url) { window.location.href = res.url; return; }
+      checkoutError("Couldn't start checkout — please try again in a moment.");
     } catch (err) {
-      if (/not configured/i.test(err.message)) toast("Payments aren't live yet — add Stripe keys to backend/.env.");
-      else toast(err.message);
-    } finally { if (btn) btn.disabled = false; }
+      if (err && err.status === 403) { if (user) openVerify(user.email); return; }   // needs verification
+      if (err && /not configured/i.test(err.message || "")) checkoutError("Payments aren't live yet. Please try again shortly.");
+      else if (err && (err.message === "Failed to fetch" || err.name === "TypeError")) checkoutError("Couldn't reach the payment server. Check your connection and try again.");
+      else checkoutError((err && err.message) || "Couldn't start checkout — please try again.");
+    } finally { if (btn) { btn.disabled = false; if (btn.dataset.prev) btn.textContent = btn.dataset.prev; } }
   }
   $("#checkoutBtn").addEventListener("click", (e) => startCheckout(e.currentTarget));
 
