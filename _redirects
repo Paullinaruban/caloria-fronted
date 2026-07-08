@@ -1,2 +1,6 @@
+/club             /club.html    200
 /admin            /admin.html   200
 /admin/analytics  /admin.html   200
+
+# API proxy — brand-domain links (e.g. email unsubscribe) reach the Render backend.
+/api/*            https://caloria-api.onrender.com/api/:splat  200

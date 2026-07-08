@@ -20,4 +20,6 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
     Permissions-Policy = "geolocation=(), microphone=(), payment=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://caloria-api.onrender.com https://*.onrender.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
+    # script-src / connect-src pre-allowlist GA4, Meta Pixel and TikTok Pixel —
+    # inert until IDs are pasted into js/analytics.js.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://caloria-api.onrender.com https://*.onrender.com https://challenges.cloudflare.com https://www.google-analytics.com https://analytics.google.com https://www.facebook.com https://analytics.tiktok.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"

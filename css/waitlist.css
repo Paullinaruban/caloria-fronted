@@ -1,0 +1,78 @@
+/* =============== Caloria Club — standalone waitlist homepage ===============
+   Frontend A (temporary public homepage during the founding campaign).
+   Loads AFTER styles.css and only adds wl-* rules — the existing site's
+   styles are never modified. */
+
+.wl-page { overflow-x: hidden; }
+
+/* minimal header — brand only, no product navigation */
+.wl-nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 14px 26px; }
+.wl-nav::after { content: ""; position: absolute; inset: 0; z-index: -1; border-bottom: 1px solid var(--line); }
+.wl-nav .btn { margin-left: auto; }
+
+/* hero */
+.wl-hero { position: relative; text-align: center; padding: 72px 22px 40px; overflow: hidden; }
+.wl-hero-glow1, .wl-hero-glow2 { position: absolute; border-radius: 50%; filter: blur(110px); pointer-events: none; }
+.wl-hero-glow1 { width: 520px; height: 520px; top: -220px; right: -140px; background: var(--blush); opacity: .85; animation: clubDrift 12s ease-in-out infinite; }
+.wl-hero-glow2 { width: 420px; height: 420px; bottom: -200px; left: -130px; background: #d8f7f2; opacity: .9; animation: clubDrift 14s ease-in-out infinite reverse; }
+.wl-hero-inner { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; }
+.wl-hero h1 { font-size: clamp(44px, 8vw, 76px); margin: 22px 0 0; }
+.wl-hero .wl-lede { font-size: clamp(17px, 2.6vw, 20px); color: var(--ink-soft); margin: 18px auto 0; max-width: 34em; line-height: 1.65; }
+.wl-hero-cta { margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.wl-hero-proof { font-size: 14px; font-weight: 600; color: var(--ink-soft); }
+.wl-mascot { width: 150px; margin: 34px auto 0; display: block; filter: drop-shadow(0 18px 26px rgba(176,60,110,.28)); animation: floaty 7s ease-in-out infinite; }
+
+/* generic waitlist section rhythm */
+.wl-section { max-width: 980px; margin: 0 auto; padding: 56px 22px; }
+.wl-title { text-align: center; font-size: clamp(28px, 4.6vw, 40px); }
+.wl-sub { text-align: center; color: var(--ink-soft); margin: 12px auto 0; max-width: 38em; font-size: 16.5px; line-height: 1.6; }
+
+/* founder program */
+.wl-founder-note { max-width: 620px; margin: 30px auto 0; text-align: center; background: rgba(255,255,255,.8);
+  border: 1px solid var(--glass-brd); border-radius: var(--r-lg); padding: 24px 26px; box-shadow: var(--sh-sm); }
+.wl-founder-note b { color: var(--rose-deep); }
+
+/* referral — three steps */
+.wl-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; }
+.wl-step { position: relative; background: rgba(255,255,255,.8); border: 1px solid var(--glass-brd); border-radius: var(--r-lg);
+  padding: 28px 20px; text-align: center; box-shadow: var(--sh-sm); transition: transform .25s ease, box-shadow .25s ease; }
+.wl-step:hover { transform: translateY(-5px); box-shadow: var(--sh-md); }
+.wl-step-n { position: absolute; top: 14px; right: 18px; font-family: var(--font-head); font-size: 22px; color: var(--blush); font-weight: 700; }
+.wl-step-emoji { font-size: 38px; }
+.wl-step h3 { margin: 12px 0 6px; font-size: 19px; }
+.wl-step p { color: var(--ink-soft); font-size: 14.5px; line-height: 1.5; }
+
+/* FAQ */
+.wl-faq { max-width: 720px; margin: 34px auto 0; display: flex; flex-direction: column; gap: 12px; }
+.wl-faq details { background: rgba(255,255,255,.82); border: 1px solid var(--glass-brd); border-radius: var(--r-md);
+  box-shadow: var(--sh-sm); overflow: hidden; }
+.wl-faq summary { list-style: none; cursor: pointer; padding: 18px 22px; font-weight: 700; font-size: 15.5px;
+  display: flex; align-items: center; gap: 12px; }
+.wl-faq summary::-webkit-details-marker { display: none; }
+.wl-faq summary::after { content: "+"; margin-left: auto; font-family: var(--font-head); font-size: 22px; color: var(--rose-deep); transition: transform .25s ease; }
+.wl-faq details[open] summary::after { transform: rotate(45deg); }
+.wl-faq details p { padding: 0 22px 18px; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; }
+
+/* closing CTA band */
+.wl-cta-band { max-width: 980px; margin: 20px auto 30px; border-radius: var(--r-xl); padding: 54px 30px; text-align: center;
+  background: var(--grad-rose); color: #fff; box-shadow: var(--sh-md); }
+.wl-cta-band h2 { font-size: clamp(26px, 4vw, 38px); }
+.wl-cta-band p { opacity: .92; margin: 10px 0 24px; }
+.wl-cta-band .btn { background: #fff; color: var(--rose-deep); }
+.wl-cta-band .btn:hover { transform: translateY(-2px); box-shadow: 0 18px 50px rgba(0,0,0,.18); }
+
+/* footer */
+.wl-footer { text-align: center; padding: 40px 22px 48px; color: var(--ink-soft); }
+.wl-footer-brand { font-family: var(--font-head); font-size: 22px; color: var(--ink); margin-bottom: 8px; }
+.wl-footer a { text-decoration: underline; }
+.wl-footer-fine { font-size: 12px; margin-top: 8px; }
+
+@media (max-width: 720px) {
+  .wl-steps { grid-template-columns: 1fr; }
+  .wl-hero { padding-top: 54px; }
+}
+@media (max-width: 480px) {
+  .wl-nav { padding: 12px 14px; gap: 8px; }
+  .wl-nav .btn { font-size: 12.5px; padding: 9px 12px; }
+  .wl-nav .brand-name { font-size: 19px; }
+}

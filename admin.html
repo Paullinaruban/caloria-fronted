@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex,nofollow" />
 <title>Caloria — Admin</title>
+<!-- iPhone Home Screen: opens fullscreen like an app, named "Caloria HQ" -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Caloria HQ" />
+<meta name="theme-color" content="#f6f8fb" />
   <link rel="icon" href="/favicon.ico?v=1" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32.png?v=1" />
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=1" />
@@ -70,6 +76,13 @@
   th.sortable .arr { opacity:.5; font-size:10px; }
   td.num { text-align:right; font-variant-numeric:tabular-nums; }
   #loginCard { max-width:380px; margin:60px auto; }
+  /* iPhone: 16px inputs stop Safari's auto-zoom on focus; roomier touch targets. */
+  @media (max-width: 640px) {
+    input, select, textarea, button.btn { font-size:16px; }
+    nav.tabs button { padding:10px 14px; }
+    main { padding:14px; }
+    header { padding:12px 14px; }
+  }
   .detail dl { display:grid; grid-template-columns:auto 1fr; gap:6px 16px; margin:0; font-size:14px; }
   .detail dt { color:var(--muted); }
   .pillrow { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
@@ -86,16 +99,21 @@
 </header>
 <main>
   <div class="card" id="loginCard">
-    <h2>Admin sign in</h2>
-    <label>Email</label><input id="email" type="email" autocomplete="username" style="width:100%" />
-    <label>Password</label><input id="password" type="password" autocomplete="current-password" style="width:100%" />
-    <div style="margin-top:14px"><button class="btn" id="loginBtn" style="width:100%">Sign in</button></div>
+    <h2 id="loginTitle">Admin sign in</h2>
+    <form id="loginForm">
+      <label>Email</label><input id="email" type="email" autocomplete="username" style="width:100%" required />
+      <label>Password</label><input id="password" type="password" autocomplete="current-password" style="width:100%" required minlength="6" />
+      <div style="margin-top:14px"><button class="btn" id="loginBtn" type="submit" style="width:100%">Sign in</button></div>
+    </form>
     <div class="msg" id="loginMsg"></div>
+    <p class="muted" style="font-size:13px;margin-top:12px">First time on this deployment?
+      <a href="#" id="loginModeToggle">Create your admin account</a></p>
   </div>
 
   <div id="app" class="hidden">
     <nav class="tabs" id="tabs">
       <button data-tab="business" class="active">Business</button>
+      <button data-tab="club">Caloria Club</button>
       <button data-tab="users">Users</button>
       <button data-tab="subs">Subscriptions</button>
       <button data-tab="analytics">Analytics</button>
@@ -111,6 +129,96 @@
       </div>
       <div class="card"><h2>Most active members</h2><div id="bizActive" class="scroll"></div></div>
       <div class="card"><h2>Members approaching internal limits</h2><div id="bizApproach" class="scroll"></div></div>
+    </section>
+
+    <!-- CALORIA CLUB (founding members) -->
+    <section data-panel="club" class="hidden">
+      <div class="card">
+        <h2>System status <span class="muted" id="clubHealthTime"></span>
+          <button class="btn ghost sm" id="clubHealthRefresh" style="float:right">Refresh</button></h2>
+        <div class="kpis" id="clubHealth"></div>
+      </div>
+
+      <div class="card">
+        <h2>Waitlist analytics <span class="muted" id="clubPeriod"></span></h2>
+        <div class="kpis" id="clubKpis"></div>
+        <h3 class="muted" style="margin:16px 0 20px 0">Daily signups — last 14 days</h3>
+        <div class="spark" id="clubGrowth"></div>
+        <div id="clubGrowthLbls" style="display:flex;gap:6px"></div>
+      </div>
+
+      <div class="card">
+        <h2>What members told us <span class="muted">· founding onboarding answers</span></h2>
+        <div class="ai-grid2">
+          <div><h3 class="muted" style="margin:0 0 8px">Biggest wellness goal</h3><div class="chart" id="clubAnsGoal"></div>
+            <h3 class="muted" style="margin:16px 0 8px">Biggest struggle</h3><div class="chart" id="clubAnsStruggle"></div></div>
+          <div><h3 class="muted" style="margin:0 0 8px">Most excited about</h3><div class="chart" id="clubAnsExcited"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Send a founder update <span class="muted">· via Resend · this is also how you'll send the launch-day early-access email</span></h2>
+        <label>Send to</label>
+        <select id="cuAudience" style="width:100%">
+          <option value="all">All members</option>
+          <option value="referrers">Top referrers (1+ referrals)</option>
+          <option value="first_100">First 100 members</option>
+          <option value="first_1000">First 1,000 members</option>
+          <option value="invited">Invited members (joined via referral)</option>
+        </select>
+        <label>Subject</label>
+        <input id="cuSubject" placeholder="e.g. A first look inside Caloria 🤍" style="width:100%" />
+        <label>Message <span class="muted">(blank line = new paragraph; wrapped in the branded Caloria template with your signature + unsubscribe link)</span></label>
+        <textarea id="cuMessage" rows="8" style="width:100%;font:inherit;padding:9px 11px;border-radius:9px;border:1px solid var(--line)" placeholder="Hi lovely,&#10;&#10;Here's what we've been building for you this week…"></textarea>
+        <div class="muted" style="font-size:12px;margin-top:6px">
+          Personalization tags: <code>{{position}}</code> <code>{{referral_count}}</code> <code>{{referral_link}}</code> <code>{{referral_code}}</code> <code>{{email}}</code>
+          — e.g. “You're Founding Member №{{position}}”.
+          <span id="cuDraftNote" style="float:right"></span>
+        </div>
+        <div class="row" style="margin-top:12px;align-items:center">
+          <div style="flex:0"><button class="btn ghost" id="cuPreview">Preview</button></div>
+          <div style="flex:0"><button class="btn ghost" id="cuTest">Send test to me</button></div>
+          <div style="flex:0"><button class="btn" id="cuSend">Send campaign…</button></div>
+          <div class="msg" id="cuMsg" style="margin-top:0"></div>
+        </div>
+        <div id="cuPreviewWrap" class="hidden" style="margin-top:14px">
+          <div class="row" style="align-items:center;margin-bottom:8px">
+            <div style="flex:0"><b id="cuPreviewSubject" style="font-size:14px"></b></div>
+            <div style="flex:0;margin-left:auto">
+              <button class="btn ghost sm" id="cuPvDesktop">Desktop</button>
+              <button class="btn ghost sm" id="cuPvMobile">Mobile</button>
+              <button class="btn ghost sm" id="cuPvClose">Close</button>
+            </div>
+          </div>
+          <iframe id="cuPreviewFrame" title="Email preview" style="width:100%;max-width:640px;height:560px;border:1px solid var(--line);border-radius:12px;background:#fff;display:block;margin:0 auto"></iframe>
+        </div>
+        <div style="margin-top:16px" id="cuHistoryWrap"><h2 style="margin-bottom:10px">Campaign history</h2><div class="scroll" id="cuHistory"></div></div>
+        <p class="muted" style="font-size:12px;margin-top:8px">Delivered/failed counts are tracked here. Opens, bounces and spam reports are in your <a href="https://resend.com/emails" target="_blank" rel="noopener">Resend dashboard</a>.</p>
+      </div>
+
+      <div class="card">
+        <h2>Members</h2>
+        <div class="row">
+          <div style="flex:3"><label>Search by email</label><input id="clubSearch" placeholder="type to search…" style="width:100%" /></div>
+          <div><label>Joined</label>
+            <select id="clubSince" style="width:100%">
+              <option value="0">All time</option>
+              <option value="1">Today</option>
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+            </select></div>
+          <div><label>Min referrals</label><input id="clubMinRef" type="number" min="0" placeholder="0" style="width:100%" /></div>
+          <div style="flex:0"><label style="white-space:nowrap"><input type="checkbox" id="clubInvited" /> Invited only</label></div>
+          <div style="flex:0"><button class="btn" id="clubSearchBtn">Apply</button></div>
+          <div style="flex:0"><button class="btn ghost" id="clubCsv">Export CSV</button></div>
+          <div style="flex:0"><button class="btn ghost" id="clubCopyEmails">Copy emails</button></div>
+          <div style="flex:0"><button class="btn good" id="clubResendWelcomes" style="display:none"></button></div>
+        </div>
+        <div class="msg" id="clubMembersMsg"></div>
+        <div class="scroll" id="clubMembers" style="margin-top:14px"></div>
+      </div>
+
+      <div class="card"><h2>Referral leaderboard</h2><div class="scroll" id="clubBoard"></div></div>
     </section>
 
     <!-- USERS -->
@@ -214,7 +322,7 @@
   </div>
 </main>
 
-<script src="config.js?v=1"></script>
+<script src="config.js?v=2"></script>
 <script>
   const API = window.CALORIA_API || `http://${location.hostname || "localhost"}:8787`;
   const TOKEN_KEY = "caloria.admin.token";
@@ -257,6 +365,235 @@
         o.approaching_limit.map((u) => `<tr><td class="email">${esc(u.email)}</td><td>${usageCell(u.scans,u.scan_limit)}</td><td>${usageCell(u.coach,u.coach_limit)}</td></tr>`).join("") + `</tbody></table>`
       : `<div class="muted">Nobody is close to a limit. 👍</div>`;
   }
+
+  /* ---------------- Caloria Club (founding members) ---------------- */
+  const fmtDate = (s) => esc(String(s || "").replace("T", " ").slice(0, 16));
+  async function loadClubHealth() {
+    let h;
+    try { h = await api("/api/club/admin/health"); }
+    catch (e) { h = { api: false, db: false, email_configured: false, members: "?", emails_sent_today: "?" }; }
+    const light = (ok, on, off) => `<span class="tag ${ok ? "ok" : "bad"}">${ok ? on : off}</span>`;
+    $("#clubHealth").innerHTML = [
+      ["Backend / API", light(h.api, "Online", "UNREACHABLE")],
+      ["Database", light(h.db, "Healthy · read/write OK", "ERROR")],
+      ["Email service (Resend)", light(h.email_configured, "Configured", "NOT CONFIGURED")],
+      ["Members stored", `<b>${h.members}</b>`],
+      ["Emails sent today", `<b>${h.emails_sent_today}</b> <span class="muted">/ ~100 free-plan limit</span>`],
+    ].map(([k, v]) => `<div class="kpi"><b style="font-size:16px">${v}</b><span>${k}</span></div>`).join("");
+    $("#clubHealthTime").textContent = "· checked " + new Date().toLocaleTimeString();
+  }
+  $("#clubHealthRefresh").addEventListener("click", loadClubHealth);
+
+  async function loadClub() {
+    loadClubHealth();
+    const o = await api("/api/club/admin/overview");
+    $("#clubKpis").innerHTML = [
+      ["Total Founding Members", o.total, "big"],
+      ["New today", o.new_today, ""],
+      ["New this week", o.new_7d, ""],
+      ["Referral signups", `${o.referred} (${o.referred_pct}%)`, ""],
+      ["Direct signups", o.direct, ""],
+      ["Avg referrals / member", o.avg_referrals, ""],
+      ["Welcome emails sent", o.welcome_sent, ""],
+      ["Pending welcome emails", o.welcome_missing || 0, o.welcome_missing ? "big" : ""],
+      ["Emails sent today", `${o.emails_sent_today} / ~100`, ""],
+      ["Unsubscribed", o.unsubscribed, ""],
+      ["Top referrer", o.top_referrer ? `${o.top_referrer.referrals} — ${esc(o.top_referrer.email)}` : "—", ""],
+    ].map(([k, v, c]) => `<div class="kpi"><b class="${c}" style="font-size:${String(v).length > 14 ? 15 : ""}px">${v}</b><span>${k}</span></div>`).join("");
+    const g = o.growth || [], gmax = Math.max(1, ...g.map((x) => x.n));
+    $("#clubGrowth").innerHTML = g.map((x) => `<div class="b" style="height:${Math.max(4, Math.round(x.n / gmax * 100))}%"><span>${x.n || ""}</span></div>`).join("");
+    $("#clubGrowthLbls").innerHTML = g.map((x) => `<div class="lbl" style="flex:1">${x.day.slice(5)}</div>`).join("");
+    const rw = $("#clubResendWelcomes");
+    rw.style.display = o.welcome_missing ? "" : "none";
+    rw.textContent = `Resend ${o.welcome_missing} missing welcome letter${o.welcome_missing === 1 ? "" : "s"}`;
+    const ans = o.answers || {};
+    const noAns = '<div class="muted">No answers yet.</div>';
+    $("#clubAnsGoal").innerHTML = (ans.goal || []).length ? bars(ans.goal, (x) => x.answer, "count", (v) => v) : noAns;
+    $("#clubAnsStruggle").innerHTML = (ans.struggle || []).length ? bars(ans.struggle, (x) => x.answer, "count", (v) => v) : noAns;
+    $("#clubAnsExcited").innerHTML = (ans.excited || []).length ? bars(ans.excited, (x) => x.answer, "count", (v) => v) : noAns;
+    await Promise.all([loadClubMembers(), loadClubBoard(), loadClubUpdates()]);
+  }
+  function clubFilterQs(extra = "") {
+    const p = new URLSearchParams();
+    const q = $("#clubSearch").value.trim();
+    if (q) p.set("q", q);
+    if ($("#clubSince").value !== "0") p.set("since", $("#clubSince").value);
+    if (+$("#clubMinRef").value > 0) p.set("min_ref", $("#clubMinRef").value);
+    if ($("#clubInvited").checked) p.set("invited", "1");
+    if (extra) p.set("limit", extra);
+    const s = p.toString();
+    return s ? "?" + s : "";
+  }
+  let clubMembersData = [], clubSort = { key: "id", dir: -1 };
+  async function loadClubMembers() {
+    const d = await api("/api/club/admin/members" + clubFilterQs());
+    clubMembersData = d.members;
+    renderClubMembers();
+  }
+  function renderClubMembers() {
+    const ansCell = (v) => v ? `<td class="email" style="max-width:180px;white-space:normal">${esc(v)}</td>` : '<td><span class="muted">—</span></td>';
+    const rows = [...clubMembersData].sort((a, b) => {
+      const k = clubSort.key;
+      const x = k === "created_at" ? a.created_at : a[k], y = k === "created_at" ? b.created_at : b[k];
+      if (typeof x === "string" || typeof y === "string") { const sx = String(x||""), sy = String(y||""); return sx < sy ? -clubSort.dir : sx > sy ? clubSort.dir : 0; }
+      return ((x||0) - (y||0)) * clubSort.dir;
+    });
+    const arr = (k) => clubSort.key === k ? (clubSort.dir > 0 ? " ▲" : " ▼") : "";
+    $("#clubMembers").innerHTML = rows.length
+      ? `<table><thead><tr>
+          <th class="sortable" data-ck="position">#${arr("position")}</th><th>Email</th>
+          <th>Goal</th><th>Struggle</th><th>Excited about</th><th>Referral code</th>
+          <th class="sortable" data-ck="referral_count">Referrals${arr("referral_count")}</th>
+          <th>Invited by</th><th>Welcome email</th><th>Emails</th>
+          <th class="sortable" data-ck="created_at">Joined${arr("created_at")}</th></tr></thead><tbody>` +
+        rows.map((m) => `<tr>
+          <td>№${m.position}</td><td class="email">${esc(m.email)}</td>
+          ${ansCell(m.goal)}${ansCell(m.struggle)}${ansCell(m.excited)}
+          <td><span class="tag premium">${esc(m.referral_code)}</span></td>
+          <td>${m.referral_count}</td><td>${m.referred_by ? `<span class="tag ok">${esc(m.referred_by)}</span>` : '<span class="muted">—</span>'}</td>
+          <td>${yesno(m.welcome_sent)}</td>
+          <td>${m.unsubscribed ? '<span class="tag bad">Unsubscribed</span>' : '<span class="tag ok">Subscribed</span>'}</td>
+          <td>${fmtDate(m.created_at)}</td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No members match those filters.</div>`;
+    $$("#clubMembers th.sortable").forEach((th) => th.addEventListener("click", () => {
+      const k = th.dataset.ck;
+      clubSort = { key: k, dir: clubSort.key === k ? -clubSort.dir : (k === "position" ? 1 : -1) };
+      renderClubMembers();
+    }));
+  }
+  async function loadClubBoard() {
+    const d = await api("/api/club/admin/leaderboard");
+    const rows = d.leaderboard.filter((m) => m.referral_count > 0);
+    $("#clubBoard").innerHTML = rows.length
+      ? `<table><thead><tr><th>Rank</th><th>Email</th><th>Referrals</th><th>Code</th><th>Joined</th></tr></thead><tbody>` +
+        rows.map((m) => `<tr><td>${m.rank <= 3 ? ["🥇","🥈","🥉"][m.rank - 1] : m.rank}</td>
+          <td class="email">${esc(m.email)}</td><td><b>${m.referral_count}</b></td>
+          <td><span class="tag premium">${esc(m.referral_code)}</span></td><td>${fmtDate(m.created_at)}</td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No referrals yet — the leaderboard fills in as members invite friends.</div>`;
+  }
+  async function loadClubUpdates() {
+    const d = await api("/api/club/admin/updates");
+    $("#cuHistory").innerHTML = d.updates.length
+      ? `<table><thead><tr><th>When</th><th>Subject</th><th>Audience</th><th>Delivered</th><th>Failed</th><th>Status</th><th></th></tr></thead><tbody>` +
+        d.updates.map((u) => `<tr><td>${fmtDate(u.created_at)}</td><td class="email">${esc(u.subject)}</td>
+          <td>${esc(u.audience_label || u.audience || "All members")}</td>
+          <td>${u.sent}/${u.total}</td><td>${u.failed || 0}</td>
+          <td><span class="tag ${u.status === "done" ? "ok" : u.status === "interrupted" ? "bad" : "warn"}">${esc(u.status)}</span></td>
+          <td>${u.status === "interrupted" ? `<button class="btn sm" data-resume="${u.id}">Resume</button>` : ""}</td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No founder updates sent yet.</div>`;
+    $$("#cuHistory [data-resume]").forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm("Resume this campaign? It continues where it stopped — nobody receives it twice.")) return;
+      try { await api("/api/club/admin/resume-update", { method: "POST", body: { id: +b.dataset.resume } }); loadClubUpdates(); }
+      catch (e) { $("#cuMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
+    }));
+    // While a broadcast is running, keep the progress live.
+    clearTimeout(loadClubUpdates._t);
+    if (d.updates.some((u) => u.status === "sending")) loadClubUpdates._t = setTimeout(loadClubUpdates, 3000);
+  }
+  // ---- drafts: autosaved locally as you type, restored on load ----
+  const DRAFT_KEY = "caloria.admin.club.draft";
+  function saveDraft() {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      subject: $("#cuSubject").value, message: $("#cuMessage").value,
+      audience: $("#cuAudience").value, at: Date.now(),
+    }));
+    $("#cuDraftNote").textContent = "Draft saved " + new Date().toLocaleTimeString();
+  }
+  function restoreDraft() {
+    try {
+      const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      if (!d || (!d.subject && !d.message)) return;
+      $("#cuSubject").value = d.subject || ""; $("#cuMessage").value = d.message || "";
+      if (d.audience) $("#cuAudience").value = d.audience;
+      $("#cuDraftNote").textContent = "Draft restored from " + new Date(d.at).toLocaleString();
+    } catch (_) {}
+  }
+  let draftTimer = null;
+  ["cuSubject", "cuMessage", "cuAudience"].forEach((id) => $("#" + id).addEventListener("input", () => {
+    clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 600);
+  }));
+  restoreDraft();
+
+  // ---- preview (rendered exactly as members receive it) ----
+  async function showPreview() {
+    const subject = $("#cuSubject").value.trim(), message = $("#cuMessage").value.trim();
+    if (!subject || !message) { $("#cuMsg").innerHTML = `<span class="msg err">Add a subject and a message first.</span>`; return; }
+    try {
+      const r = await api("/api/club/admin/preview-update", { method: "POST", body: { subject, message } });
+      $("#cuPreviewWrap").classList.remove("hidden");
+      $("#cuPreviewSubject").textContent = "Subject: " + r.subject;
+      $("#cuPreviewFrame").srcdoc = r.html;
+      $("#cuMsg").textContent = "";
+    } catch (e) { $("#cuMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
+  }
+  $("#cuPreview").addEventListener("click", showPreview);
+  $("#cuPvDesktop").addEventListener("click", () => { $("#cuPreviewFrame").style.maxWidth = "640px"; });
+  $("#cuPvMobile").addEventListener("click", () => { $("#cuPreviewFrame").style.maxWidth = "375px"; });
+  $("#cuPvClose").addEventListener("click", () => $("#cuPreviewWrap").classList.add("hidden"));
+
+  // ---- test send (to the signed-in admin only) ----
+  $("#cuTest").addEventListener("click", async () => {
+    const subject = $("#cuSubject").value.trim(), message = $("#cuMessage").value.trim();
+    if (!subject || !message) { $("#cuMsg").innerHTML = `<span class="msg err">Add a subject and a message first.</span>`; return; }
+    $("#cuTest").disabled = true;
+    try {
+      const r = await api("/api/club/admin/test-update", { method: "POST", body: { subject, message } });
+      $("#cuMsg").innerHTML = `<span class="msg ok">Test sent to ${esc(r.test_sent_to)} — check your inbox.</span>`;
+    } catch (e) { $("#cuMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
+    $("#cuTest").disabled = false;
+  });
+  async function clubExportCsv() {
+    const d = await api("/api/club/admin/members" + clubFilterQs("10000"));  // respects active filters
+    const cols = ["position", "email", "goal", "struggle", "excited", "referral_code", "referral_count", "referred_by", "welcome_sent", "unsubscribed", "created_at"];
+    const esc2 = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+    const lines = [cols.join(",")].concat(d.members.map((m) => cols.map((c) => esc2(m[c])).join(",")));
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `caloria-club-members-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+  $("#clubSearchBtn").addEventListener("click", () => loadClubMembers());
+  $("#clubSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") loadClubMembers(); });
+  $("#clubSince").addEventListener("change", () => loadClubMembers());
+  $("#clubInvited").addEventListener("change", () => loadClubMembers());
+  $("#clubCsv").addEventListener("click", clubExportCsv);
+  $("#clubCopyEmails").addEventListener("click", async () => {
+    // Copies the emails of the CURRENTLY FILTERED list — great for quick pastes.
+    if (!clubMembersData.length) { $("#clubMembersMsg").innerHTML = `<span class="msg err">Nothing to copy — adjust the filters.</span>`; return; }
+    const list = clubMembersData.map((m) => m.email).join(", ");
+    try { await navigator.clipboard.writeText(list); }
+    catch (_) { const ta = document.createElement("textarea"); ta.value = list; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+    $("#clubMembersMsg").innerHTML = `<span class="msg ok">Copied ${clubMembersData.length} email${clubMembersData.length === 1 ? "" : "s"} to the clipboard.</span>`;
+  });
+  $("#clubResendWelcomes").addEventListener("click", async () => {
+    if (!confirm("Resend welcome letters to every member who never received one? Members who already got theirs are never re-sent.")) return;
+    try {
+      const r = await api("/api/club/admin/resend-welcomes", { method: "POST", body: {} });
+      $("#clubMembersMsg").innerHTML = `<span class="msg ok">Resending ${r.queued} welcome letter${r.queued === 1 ? "" : "s"} in the background — refresh in a minute.</span>`;
+    } catch (e) { $("#clubMembersMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
+  });
+  $("#cuSend").addEventListener("click", async () => {
+    const subject = $("#cuSubject").value.trim(), message = $("#cuMessage").value.trim();
+    const audience = $("#cuAudience").value;
+    $("#cuMsg").textContent = "";
+    if (!subject || !message) { $("#cuMsg").innerHTML = `<span class="msg err">Add a subject and a message first.</span>`; return; }
+    $("#cuSend").disabled = true;
+    try {
+      // Live recipient count for an informed confirmation — never a blind send.
+      const a = await api("/api/club/admin/audience-count?audience=" + encodeURIComponent(audience));
+      if (!a.count) { $("#cuMsg").innerHTML = `<span class="msg err">“${esc(a.label)}” has no members yet.</span>`; $("#cuSend").disabled = false; return; }
+      if (!confirm(`Are you sure you want to send “${subject}” to ${a.count.toLocaleString()} member${a.count === 1 ? "" : "s"} (${a.label})?\n\nTip: use “Send test to me” first.`)) {
+        $("#cuSend").disabled = false; return;
+      }
+      const r = await api("/api/club/admin/send-update", { method: "POST", body: { subject, message, audience } });
+      $("#cuMsg").innerHTML = `<span class="msg ok">Sending to ${r.total.toLocaleString()} members — live progress below.</span>`;
+      $("#cuSubject").value = ""; $("#cuMessage").value = "";
+      localStorage.removeItem(DRAFT_KEY); $("#cuDraftNote").textContent = "";
+      $("#cuPreviewWrap").classList.add("hidden");
+      loadClubUpdates();
+    } catch (e) { $("#cuMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
+    $("#cuSend").disabled = false;
+  });
 
   /* ---------------- Users ---------------- */
   async function loadUsers(q = "") {
@@ -505,7 +842,7 @@
   });
 
   /* ---------------- tabs / boot ---------------- */
-  const LOADERS = { business: loadBusiness, users: () => loadUsers(), subs: loadSubs, analytics: loadAnalytics, usage: loadUsage, aicost: loadAiCost };
+  const LOADERS = { business: loadBusiness, club: loadClub, users: () => loadUsers(), subs: loadSubs, analytics: loadAnalytics, usage: loadUsage, aicost: loadAiCost };
   function showTab(name) {
     $$('#tabs button').forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
     $$('section[data-panel]').forEach((s) => s.classList.toggle("hidden", s.dataset.panel !== name));
@@ -520,12 +857,37 @@
     catch (e) { token = null; localStorage.removeItem(TOKEN_KEY); showApp(false);
       if (e.status === 403) $("#loginMsg").innerHTML = `<span class="msg err">That account is not an administrator.</span>`; }
   }
-  $("#loginBtn").addEventListener("click", async () => {
+  // Login is a real <form>: Enter submits, the button shows progress, and
+  // network failures are reported instead of failing silently. "Create your
+  // admin account" bootstraps the very first login on a fresh deployment —
+  // anyone can create an account, but only ADMIN_EMAILS ever get in here.
+  let loginMode = "login";
+  $("#loginModeToggle").addEventListener("click", (e) => {
+    e.preventDefault();
+    loginMode = loginMode === "login" ? "signup" : "login";
+    $("#loginTitle").textContent = loginMode === "login" ? "Admin sign in" : "Create admin account";
+    $("#loginBtn").textContent = loginMode === "login" ? "Sign in" : "Create account & sign in";
+    $("#loginModeToggle").textContent = loginMode === "login" ? "Create your admin account" : "Back to sign in";
     $("#loginMsg").textContent = "";
-    try { const r = await api("/api/auth/login", { method: "POST", body: { email: $("#email").value.trim(), password: $("#password").value } });
-      token = r.token; localStorage.setItem(TOKEN_KEY, token); await loadBusiness(); showApp(true); syncOv(); }
-    catch (e) { $("#loginMsg").innerHTML = `<span class="msg err">${esc(e.status === 403 ? "Not an administrator." : e.message)}</span>`;
-      if (e.status === 403) { token = null; localStorage.removeItem(TOKEN_KEY); } }
+  });
+  $("#loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("#loginMsg").textContent = "";
+    const btn = $("#loginBtn");
+    btn.disabled = true; btn.textContent = "One moment…";
+    try {
+      const path = loginMode === "signup" ? "/api/auth/signup" : "/api/auth/login";
+      const r = await api(path, { method: "POST", body: { email: $("#email").value.trim(), password: $("#password").value } });
+      token = r.token; localStorage.setItem(TOKEN_KEY, token);
+      await loadBusiness(); showApp(true); syncOv();
+    } catch (e2) {
+      let msg = e2.message || "Something went wrong.";
+      if (e2.status === 403) { msg = "That account is not an administrator."; token = null; localStorage.removeItem(TOKEN_KEY); }
+      else if (e2 instanceof TypeError || !e2.status) msg = "Can't reach the API server — check that the backend is running.";
+      $("#loginMsg").innerHTML = `<span class="msg err">${esc(msg)}</span>`;
+    }
+    btn.disabled = false;
+    btn.textContent = loginMode === "login" ? "Sign in" : "Create account & sign in";
   });
   $("#logoutBtn").addEventListener("click", () => { token = null; localStorage.removeItem(TOKEN_KEY); showApp(false); });
   boot();
