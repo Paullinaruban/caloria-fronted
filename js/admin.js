@@ -315,7 +315,10 @@
         <dt>Email</dt><dd>${esc(u.email)} ${yesno(u.verified)}</dd>
         <dt>Name</dt><dd>${esc(u.name) || "—"}</dd>
         <dt>Joined</dt><dd>${esc(u.joined)}</dd>
-        <dt>Plan</dt><dd>${planTag(u.plan)} · ${esc(u.subscription_status)}</dd>
+        <dt>Plan</dt><dd>${planTag(u.plan)} · ${esc(u.subscription_status)}${u.plan_interval ? ` · <span class="tag ok">${esc(u.plan_interval)}</span>` : ""}</dd>
+        <dt>Purchased</dt><dd>${u.subscribed_at ? esc(u.subscribed_at.slice(0,10)) : '<span class="muted">—</span>'}</dd>
+        <dt>Stripe customer</dt><dd>${u.stripe_customer ? `<code>${esc(u.stripe_customer)}</code>` : '<span class="muted">—</span>'}</dd>
+        <dt>Stripe subscription</dt><dd>${u.stripe_subscription ? `<code>${esc(u.stripe_subscription)}</code>` : '<span class="muted">—</span>'}</dd>
         <dt>Founding</dt><dd>${u.founding_member ? '<span class="tag premium">👑 Founding Member</span>' : '<span class="muted">—</span>'}</dd>
         <dt>Active</dt><dd>${yesno(u.active)}</dd>
         <dt>Goal</dt><dd>${esc(pr.goal || pr.physique || "—")}</dd>
@@ -329,9 +332,13 @@
         ${u.active ? `<button class="btn danger sm" data-act="deactivate">Deactivate</button>` : `<button class="btn good sm" data-act="activate">Reactivate</button>`}
         ${u.plan === "premium" ? `<button class="btn ghost sm" data-act="revoke_premium">Revoke premium</button>` : `<button class="btn good sm" data-act="grant_premium">Grant premium</button>`}
         ${u.founding_member ? `<button class="btn ghost sm" data-act="revoke_founding">Revoke founding</button>` : `<button class="btn good sm" data-act="grant_founding">Grant founding 👑</button>`}
+        <button class="btn danger sm" data-act="delete" style="margin-left:auto">Delete user…</button>
       </div>`;
     $$('#userDetail [data-act]').forEach((b) => b.addEventListener("click", async () => {
-      try { await api("/api/admin/user/action", { method: "POST", body: { action: b.dataset.act, email: u.email } });
+      const act = b.dataset.act;
+      if (act === "delete" && !confirm(`Permanently delete ${u.email}? This removes their account, meals and community activity. This cannot be undone.`)) return;
+      try { const r = await api("/api/admin/user/action", { method: "POST", body: { action: act, email: u.email } });
+        if (r && r.deleted) { $("#userMsg").innerHTML = `<span class="msg ok">User deleted.</span>`; $("#userDetailCard").classList.add("hidden"); loadUsers($("#userSearch").value.trim()); return; }
         $("#userMsg").innerHTML = `<span class="msg ok">Done.</span>`; showUser(u.email); loadUsers($("#userSearch").value.trim()); }
       catch (e) { $("#userMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
     }));
@@ -347,9 +354,9 @@
   }
   async function loadSubs() {
     const s = await api("/api/admin/subscriptions");
-    $("#subsActive").innerHTML = subTable(s.active, [["Email","email"],["Name","name"],["Status","status"],["Since","since"]]);
-    $("#subsPastDue").innerHTML = subTable(s.past_due, [["Email","email"],["Name","name"],["Since","since"]]);
-    $("#subsCanceled").innerHTML = subTable(s.canceled, [["Email","email"],["Name","name"],["Since","since"]]);
+    $("#subsActive").innerHTML = subTable(s.active, [["Email","email"],["Name","name"],["Plan","interval"],["Status","status"],["Purchased","purchased"]]);
+    $("#subsPastDue").innerHTML = subTable(s.past_due, [["Email","email"],["Name","name"],["Plan","interval"],["Purchased","purchased"]]);
+    $("#subsCanceled").innerHTML = subTable(s.canceled, [["Email","email"],["Name","name"],["Plan","interval"],["Since","since"]]);
     $("#subsFailed").innerHTML = subTable(s.failed_payments, [["Email","email"],["When","created_at"]]);
   }
 
@@ -360,6 +367,7 @@
     $("#anKpis").innerHTML = [
       ["Total users", a.total_users], ["Verified", `${a.verified_users} (${a.verified_pct}%)`],
       ["Paying subscribers", a.paying_subscribers], ["Conversion", a.conversion_rate_pct + "%"],
+      ["Monthly subs", a.monthly_subscribers], ["Yearly subs", a.yearly_subscribers],
       ["MRR", money(a.mrr)], ["ARR (est.)", money(a.arr)],
       ["New users (mo)", a.new_users_this_month], ["New subs (mo)", a.new_subscribers_this_month],
       ["Retention", a.retention_pct + "%"], ["Churn", a.churn_pct + "%"],
@@ -369,6 +377,48 @@
     $("#anGrowth").innerHTML = g.map((x) => `<div class="b" style="height:${Math.round(x.new_users / max * 100)}%"><span>${x.new_users}</span></div>`).join("");
     $("#anGrowthLbls").innerHTML = g.map((x) => `<div class="lbl" style="flex:1">${x.month.slice(5)}</div>`).join("");
   }
+
+  /* ---------------- Community moderation ---------------- */
+  async function loadCommunity() {
+    const d = await api("/api/admin/community");
+    $("#commKpis").innerHTML = [
+      ["Posts", d.post_count], ["Comments", d.comment_count],
+    ].map(([k, v]) => `<div class="kpi"><b>${v}</b><span>${k}</span></div>`).join("");
+    $("#commPostCount").textContent = d.post_count ? `· ${d.post_count}` : "";
+    $("#commCommentCount").textContent = d.comment_count ? `· ${d.comment_count}` : "";
+    $("#commPosts").innerHTML = d.posts.length
+      ? `<table><thead><tr><th>When</th><th>Author</th><th>Type</th><th>Post</th><th>♥</th><th>💬</th><th></th></tr></thead><tbody>` +
+        d.posts.map((p) => `<tr>
+          <td>${esc((p.created_at||"").slice(0,16))}</td>
+          <td class="email">${esc(p.author_email || "—")}</td>
+          <td><span class="tag free">${esc(p.type||"")}</span></td>
+          <td class="email">${esc((p.text||"").slice(0,140)) || (p.image ? "<span class='muted'>[image]</span>" : "")}</td>
+          <td class="num">${p.likes}</td><td class="num">${p.comments}</td>
+          <td><button class="btn danger sm" data-del-post="${p.id}">Delete</button></td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No posts yet.</div>`;
+    $("#commComments").innerHTML = d.comments.length
+      ? `<table><thead><tr><th>When</th><th>Author</th><th>Post</th><th>Comment</th><th></th></tr></thead><tbody>` +
+        d.comments.map((cm) => `<tr>
+          <td>${esc((cm.created_at||"").slice(0,16))}</td>
+          <td class="email">${esc(cm.author_email || "—")}</td>
+          <td class="num">#${cm.post_id}</td>
+          <td class="email">${esc((cm.text||"").slice(0,160))}</td>
+          <td><button class="btn danger sm" data-del-comment="${cm.id}">Delete</button></td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No comments yet.</div>`;
+    $$('#commPosts [data-del-post]').forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm("Delete this post and its likes & comments? This cannot be undone.")) return;
+      try { await api("/api/admin/community/post?post_id=" + b.dataset.delPost, { method: "DELETE" });
+        $("#commMsg").innerHTML = `<span class="msg ok">Post deleted.</span>`; loadCommunity(); }
+      catch (e) { $("#commMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
+    }));
+    $$('#commComments [data-del-comment]').forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm("Delete this comment? This cannot be undone.")) return;
+      try { await api("/api/admin/community/comment?comment_id=" + b.dataset.delComment, { method: "DELETE" });
+        $("#commMsg").innerHTML = `<span class="msg ok">Comment deleted.</span>`; loadCommunity(); }
+      catch (e) { $("#commMsg").innerHTML = `<span class="msg err">${esc(e.message)}</span>`; }
+    }));
+  }
+  $("#commRefresh").addEventListener("click", loadCommunity);
 
   /* ---------------- Usage & alerts ---------------- */
   async function loadUsage() {
@@ -538,7 +588,7 @@
   });
 
   /* ---------------- tabs / boot ---------------- */
-  const LOADERS = { business: loadBusiness, club: loadClub, users: () => loadUsers(), subs: loadSubs, analytics: loadAnalytics, usage: loadUsage, aicost: loadAiCost };
+  const LOADERS = { business: loadBusiness, club: loadClub, users: () => loadUsers(), subs: loadSubs, community: loadCommunity, analytics: loadAnalytics, usage: loadUsage, aicost: loadAiCost };
   function showTab(name) {
     $$('#tabs button').forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
     $$('section[data-panel]').forEach((s) => s.classList.toggle("hidden", s.dataset.panel !== name));

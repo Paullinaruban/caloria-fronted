@@ -116,6 +116,7 @@
       <button data-tab="club">Caloria Club</button>
       <button data-tab="users">Users</button>
       <button data-tab="subs">Subscriptions</button>
+      <button data-tab="community">Community</button>
       <button data-tab="analytics">Analytics</button>
       <button data-tab="usage">Usage &amp; alerts</button>
       <button data-tab="aicost">AI Cost</button>
@@ -263,6 +264,18 @@
       <div class="card"><h2>Recent failed payments</h2><div class="scroll" id="subsFailed"></div></div>
     </section>
 
+    <!-- COMMUNITY (moderation) -->
+    <section data-panel="community" class="hidden">
+      <div class="card">
+        <h2>Community moderation <span class="muted">· newest first · deleting is permanent</span>
+          <button class="btn ghost sm" id="commRefresh" style="float:right">Refresh</button></h2>
+        <div class="kpis" id="commKpis"></div>
+      </div>
+      <div class="card"><h2>Posts <span class="muted" id="commPostCount"></span></h2><div class="scroll" id="commPosts"></div></div>
+      <div class="card"><h2>Comments <span class="muted" id="commCommentCount"></span></h2><div class="scroll" id="commComments"></div></div>
+      <div class="msg" id="commMsg"></div>
+    </section>
+
     <!-- ANALYTICS -->
     <section data-panel="analytics" class="hidden">
       <div class="card"><h2>Key metrics <span class="muted" id="anPeriod"></span></h2><div class="kpis" id="anKpis"></div></div>
@@ -340,6 +353,6 @@
 </main>
 
 <script src="config.js?v=2"></script>
-<script src="js/admin.js?v=2"></script>
+<script src="js/admin.js?v=3"></script>
 </body>
 </html>
