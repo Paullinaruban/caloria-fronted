@@ -251,6 +251,17 @@ a { color: inherit; text-decoration: none; }
 .app-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .plan-chip { font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 100px; background: rgba(255,255,255,.7); color: var(--ink-soft); box-shadow: inset 0 0 0 1.5px var(--blush); }
 .plan-chip.premium { background: var(--grad-aqua); color: #0c5b53; box-shadow: var(--sh-aqua); }
+
+/* ---------- Founding Member badge (permanent, private-launch) ---------- */
+.founder-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800;
+  letter-spacing: .01em; padding: 5px 12px 5px 9px; border-radius: 100px; white-space: nowrap;
+  color: #6a4a12; background: linear-gradient(135deg, #fff2cf 0%, #ffe08a 45%, #f7c65a 100%);
+  box-shadow: 0 4px 14px rgba(214,164,40,.38), inset 0 0 0 1px rgba(255,255,255,.55); }
+.founder-chip .fc-crown { font-size: 13px; filter: drop-shadow(0 1px 1px rgba(180,130,20,.35)); }
+.acct-founder-row .acct-founder-badge { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-body);
+  font-size: 13px; font-weight: 800; color: #6a4a12; padding: 5px 13px 5px 10px; border-radius: 100px;
+  background: linear-gradient(135deg, #fff2cf 0%, #ffe08a 45%, #f7c65a 100%);
+  box-shadow: 0 4px 14px rgba(214,164,40,.34), inset 0 0 0 1px rgba(255,255,255,.55); }
 .view { display: none; max-width: var(--app-w); margin: 0 auto; padding: 20px 18px; animation: rise .35s ease; }
 .view.active { display: block; }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
