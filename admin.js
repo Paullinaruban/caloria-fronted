@@ -289,6 +289,30 @@
   $("#campTomorrow").addEventListener("click", (e) => sendCampaign("tomorrow", "Tomorrow", e.currentTarget));
   $("#campEarly").addEventListener("click", (e) => sendCampaign("early_access", "Early Access", e.currentTarget));
 
+  /* ---- Follow-up Early Access campaign: Send Test / Preview / Send to Waitlist ---- */
+  $("#campFollowupSend").addEventListener("click", (e) => sendCampaign("followup", "Follow-up Early Access", e.currentTarget));
+  $("#campFollowupTest").addEventListener("click", async (e) => {
+    const btn = e.currentTarget; btn.disabled = true; $("#campMsg").textContent = "";
+    try {
+      const r = await api("/api/club/admin/test-campaign", { method: "POST", body: { kind: "followup" } });
+      $("#campMsg").innerHTML = `<span class="msg ok">Test sent to ${esc(r.test_sent_to)} — check your inbox (and Spam/Promotions).</span>`;
+    } catch (err) { $("#campMsg").innerHTML = `<span class="msg err">${esc(err.message)}</span>`; }
+    btn.disabled = false;
+  });
+  async function previewFollowup() {
+    $("#campMsg").textContent = "";
+    try {
+      const r = await api("/api/club/admin/preview-campaign", { method: "POST", body: { kind: "followup" } });
+      $("#campFollowupSubject").textContent = "Subject: " + r.subject;
+      $("#campFollowupFrame").srcdoc = r.html;
+      $("#campFollowupPreviewWrap").classList.remove("hidden");
+    } catch (err) { $("#campMsg").innerHTML = `<span class="msg err">${esc(err.message)}</span>`; }
+  }
+  $("#campFollowupPreview").addEventListener("click", previewFollowup);
+  $("#campFollowupPvDesktop").addEventListener("click", () => { $("#campFollowupFrame").style.maxWidth = "640px"; });
+  $("#campFollowupPvMobile").addEventListener("click", () => { $("#campFollowupFrame").style.maxWidth = "375px"; });
+  $("#campFollowupPvClose").addEventListener("click", () => $("#campFollowupPreviewWrap").classList.add("hidden"));
+
   /* ---------------- Users ---------------- */
   async function loadUsers(q = "") {
     const d = await api("/api/admin/users" + (q ? "?q=" + encodeURIComponent(q) : ""));

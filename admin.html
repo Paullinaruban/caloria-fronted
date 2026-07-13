@@ -170,8 +170,28 @@
             <p class="muted" style="font-size:13px;margin:4px 0 12px">Early Access — opens the doors and links to the live Caloria Club.</p>
             <button class="btn good" id="campEarly" style="width:100%">Send “Early Access” Email</button>
           </div>
+          <div style="flex:1;border:1px solid #ffd7e7;border-radius:12px;padding:14px;background:#fff8fb">
+            <b style="font-size:15px">⏳ Follow-up Early Access</b>
+            <p class="muted" style="font-size:13px;margin:4px 0 12px">Reminder for members who missed the first email — “check Spam/Promotions, your invitation is waiting, closes July 15.”</p>
+            <button class="btn ghost sm" id="campFollowupTest" style="width:100%;margin-bottom:6px">Send Test Email (to me)</button>
+            <button class="btn ghost sm" id="campFollowupPreview" style="width:100%;margin-bottom:6px">Preview</button>
+            <button class="btn good" id="campFollowupSend" style="width:100%">Send to Waitlist</button>
+          </div>
         </div>
         <div class="msg" id="campMsg"></div>
+
+        <!-- Follow-up campaign preview (exact HTML members receive) -->
+        <div id="campFollowupPreviewWrap" class="hidden" style="margin-top:14px">
+          <div class="row" style="align-items:center;margin-bottom:8px">
+            <div style="flex:0"><b id="campFollowupSubject" style="font-size:14px"></b></div>
+            <div style="flex:0;margin-left:auto">
+              <button class="btn ghost sm" id="campFollowupPvDesktop">Desktop</button>
+              <button class="btn ghost sm" id="campFollowupPvMobile">Mobile</button>
+              <button class="btn ghost sm" id="campFollowupPvClose">Close</button>
+            </div>
+          </div>
+          <iframe id="campFollowupFrame" title="Follow-up email preview" style="width:100%;max-width:640px;height:620px;border:1px solid var(--line);border-radius:12px;background:#fff;display:block;margin:0 auto"></iframe>
+        </div>
       </div>
 
       <div class="card">
@@ -353,6 +373,6 @@
 </main>
 
 <script src="config.js?v=2"></script>
-<script src="js/admin.js?v=3"></script>
+<script src="js/admin.js?v=4"></script>
 </body>
 </html>
