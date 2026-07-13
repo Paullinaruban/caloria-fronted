@@ -126,8 +126,20 @@
       // STEP 1: visitors always get the public landing page — never the paywall.
       $("#app").classList.add("hidden");
       $("#site").classList.remove("hidden");
+      closeVerify();
       return;
     }
+    // STEP 2 (MANDATORY): no app access until the email is verified. The gate is
+    // the ONLY thing on screen — both the app and the marketing site are hidden
+    // behind it, so no protected view ever renders and the modal can't be
+    // dismissed to reveal anything. (The server enforces this independently.)
+    if (user.needs_verification) {
+      $("#site").classList.add("hidden");
+      $("#app").classList.add("hidden");
+      openVerify(user.email);
+      return;
+    }
+    closeVerify();
     $("#site").classList.add("hidden");
     $("#app").classList.remove("hidden");
     updatePlanChip();
@@ -137,14 +149,6 @@
       hideGate();
       if (!user.targets) { obReset(); showView("onboard"); }   // premium but not onboarded (rare)
       else { showView("dashboard"); loadDashboard(); }
-      return;
-    }
-
-    // --- Signed in, not yet subscribed ---
-    // STEP 3: verification is mandatory before onboarding can begin.
-    if (user.needs_verification) {
-      hideGate(); obReset(); showView("onboard");   // onboarding shell as backdrop
-      openVerify(user.email);                        // modal blocks until verified
       return;
     }
 
@@ -336,9 +340,35 @@
     setTimeout(() => $("#verifyCodeInput").focus(), 60);
   }
   const closeVerify = () => verifyModal.classList.remove("show");
-  $("#verifyClose").addEventListener("click", closeVerify);
-  verifyModal.addEventListener("click", (e) => { if (e.target === verifyModal) closeVerify(); });
-  $("#verifyEnterCode").addEventListener("click", () => openVerify(user && user.email));
+  // The verification gate is MANDATORY and non-dismissable — there is no close
+  // button and clicking the backdrop does nothing. The only ways off this screen
+  // are: enter a valid code, or log out. This is what makes verification
+  // un-bypassable on the client (the server enforces it independently too).
+  $("#verifyEnterCode") && $("#verifyEnterCode").addEventListener("click", () => openVerify(user && user.email));
+  // Change email (typo at signup): reveal an inline form.
+  $("#verifyChangeEmail").addEventListener("click", () => {
+    const f = $("#verifyChangeForm");
+    f.classList.toggle("hidden");
+    if (!f.classList.contains("hidden")) setTimeout(() => $("#verifyNewEmail").focus(), 60);
+  });
+  $("#verifyChangeForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const newEmail = $("#verifyNewEmail").value.trim();
+    const cerr = $("#verifyChangeError"); cerr.classList.add("hidden");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(newEmail)) { cerr.textContent = "Enter a valid email address."; cerr.classList.remove("hidden"); return; }
+    $("#verifyChangeSubmit").disabled = true;
+    try {
+      const r = await api("/api/auth/change-email", { method: "POST", body: { email: newEmail }, auth: !!token });
+      if (r && r.user) user = r.user;
+      verifyEmailAddr = (r && r.email) || newEmail;
+      $("#verifyEmail").textContent = verifyEmailAddr;
+      $("#verifyChangeForm").classList.add("hidden");
+      $("#verifyNewEmail").value = "";
+      $("#verifyResendMsg").textContent = "New code sent to " + verifyEmailAddr + " 💌";
+    } catch (ex) { cerr.textContent = (ex && ex.message) || "Couldn't update email."; cerr.classList.remove("hidden"); }
+    finally { $("#verifyChangeSubmit").disabled = false; }
+  });
+  $("#verifyLogout").addEventListener("click", () => doLogout());
   $("#verifyCodeInput").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6); });
   $("#verifyForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -452,6 +482,12 @@
       const sessionId = p.get("session_id") || "";
       history.replaceState({}, "", location.pathname);
       if (co === "success" && user && !hasAccess()) { await confirmSubscription(sessionId); }
+      // Returned without paying (declined, closed, or cancelled). Give real guidance
+      // instead of letting them hammer the same card — repeated declines on one card
+      // are what trigger the bank's card_velocity_exceeded block.
+      else if (co === "cancel" && user && !hasAccess()) {
+        toast("Checkout wasn't completed. If your card was declined, try a different card or contact your bank — repeated attempts on the same card can get temporarily blocked.");
+      }
     }
   }
 
@@ -1749,19 +1785,30 @@
     toast(msg);
   }
 
+  // Guard against overlapping checkout requests from ANY of the checkout buttons
+  // (landing, gate, paywall). Combined with per-button disabling and the backend's
+  // session reuse, one user action can only ever create one Checkout Session.
+  let checkoutInFlight = false;
   async function startCheckout(btn) {
+    if (checkoutInFlight) return;
+    checkoutInFlight = true;
     if (btn) { btn.disabled = true; btn.dataset.prev = btn.textContent; btn.textContent = "Opening secure checkout…"; }
     const note = $("#sgNote"); if (note) note.classList.remove("checkout-error");
+    const reenable = () => { checkoutInFlight = false; if (btn) { btn.disabled = false; if (btn.dataset.prev) btn.textContent = btn.dataset.prev; } };
     try {
       const res = await api("/api/billing/checkout", { method: "POST", body: { interval: billingInterval } });
+      // On success we navigate away — deliberately leave the button disabled and the
+      // in-flight lock set so nothing can fire a second request during the redirect.
       if (res && res.url) { window.location.href = res.url; return; }
       checkoutError("Couldn't start checkout — please try again in a moment.");
+      reenable();
     } catch (err) {
-      if (err && err.status === 403) { if (user) openVerify(user.email); return; }   // needs verification
+      if (err && err.status === 403) { reenable(); if (user) openVerify(user.email); return; }   // needs verification
       if (err && /not configured/i.test(err.message || "")) checkoutError("Payments aren't live yet. Please try again shortly.");
       else if (err && (err.message === "Failed to fetch" || err.name === "TypeError")) checkoutError("Couldn't reach the payment server. Check your connection and try again.");
       else checkoutError((err && err.message) || "Couldn't start checkout — please try again.");
-    } finally { if (btn) { btn.disabled = false; if (btn.dataset.prev) btn.textContent = btn.dataset.prev; } }
+      reenable();
+    }
   }
   $("#checkoutBtn").addEventListener("click", (e) => startCheckout(e.currentTarget));
 

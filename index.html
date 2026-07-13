@@ -196,7 +196,7 @@
     <!-- PRICING -->
     <section id="pricing" class="section">
       <h2 class="section-title">Simple, premium pricing</h2>
-      <p class="section-sub">Start free. Upgrade when you're ready for the full platform.</p>
+      <p class="section-sub">One membership unlocks the entire platform — nutrition, training, coaching &amp; community.</p>
 
       <div class="bill-toggle">
         <button class="bt-opt active" data-interval="monthly">Monthly</button>
@@ -229,7 +229,7 @@
 
     <section class="cta-band">
       <h2>Eat with confidence, starting today.</h2>
-      <p>Your first AI scan is free.</p>
+      <p>Join thousands of women transforming together.</p>
       <button class="btn btn-glow btn-lg" data-auth="signup">Join The Club</button>
     </section>
 
@@ -319,7 +319,6 @@
   <!-- ======================= EMAIL VERIFICATION CODE MODAL ======================= -->
   <div class="modal-overlay" id="verifyModal">
     <div class="modal glass-strong">
-      <button class="modal-close" id="verifyClose">×</button>
       <div class="modal-brand"><span class="brand-mark">◍</span> Caloria</div>
       <h2>Verify your email</h2>
       <p class="modal-sub">We sent a 6-digit code to <b id="verifyEmail">your email</b>. Enter it below to activate your account.</p>
@@ -329,6 +328,24 @@
         <button class="btn btn-primary btn-block" id="verifySubmit" type="submit">Verify &amp; continue</button>
       </form>
       <p class="auth-switch">Didn't get a code? <button id="verifyResendBtn" type="button">Resend code</button> <span class="muted" id="verifyResendMsg"></span></p>
+
+      <!-- Deliverability hint — verification emails are often filtered into spam -->
+      <p class="verify-hint" style="font-size:12.5px;color:#a08a99;margin:12px 0 0;line-height:1.55;background:#fff6fb;border:1px solid #ffe6f1;border-radius:12px;padding:10px 13px;text-align:left">
+        💌 <b style="color:#8a7280">Can't find the email?</b> Please check your <b>Spam</b>, <b>Junk</b> and <b>Promotions</b> folders — verification emails are sometimes filtered there.
+      </p>
+
+      <!-- Change email (typo at signup) — resets verification and sends a new code -->
+      <form id="verifyChangeForm" class="hidden">
+        <input id="verifyNewEmail" class="input" type="email" autocomplete="email" placeholder="your.correct@email.com" aria-label="New email address" />
+        <div class="auth-error hidden" id="verifyChangeError"></div>
+        <button class="btn btn-block" id="verifyChangeSubmit" type="submit">Update email &amp; resend code</button>
+      </form>
+
+      <p class="auth-switch">
+        <button id="verifyChangeEmail" type="button">Wrong email? Change it</button>
+        &nbsp;·&nbsp;
+        <button id="verifyLogout" type="button">Log out</button>
+      </p>
     </div>
   </div>
 
@@ -968,6 +985,6 @@
 
   <div class="toast" id="toast"></div>
   <script src="config.js?v=qa5"></script>
-  <script src="js/app.js?v=54"></script>
+  <script src="js/app.js?v=56"></script>
 </body>
 </html>
