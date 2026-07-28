@@ -35,6 +35,8 @@
 
   <link rel="stylesheet" href="css/fonts.css" />
   <link rel="stylesheet" href="css/styles.css?v=39" />
+  <!-- Native (Capacitor) refinements — inert on the web -->
+  <link rel="stylesheet" href="css/native.css?v=1" />
 </head>
 <body>
 
@@ -200,7 +202,7 @@
 
       <div class="bill-toggle">
         <button class="bt-opt active" data-interval="monthly">Monthly</button>
-        <button class="bt-opt" data-interval="yearly">Yearly <span class="save">save 58%</span></button>
+        <button class="bt-opt" data-interval="yearly">Yearly <span class="save">save 45%</span></button>
       </div>
 
       <div class="plans">
@@ -211,9 +213,11 @@
             <select class="cur-select" aria-label="Currency"></select>
           </div>
           <div class="plan-price">
-            <span class="pp-amt" id="priceAmt">$19.99</span><span class="pp-per" id="pricePer">/month</span>
+            <span class="pp-compare" id="priceCompare">$19.99</span>
+            <span class="pp-amt" id="priceAmt">$15</span><span class="pp-per" id="pricePer">/month</span>
           </div>
           <p class="pp-note" id="priceNote">Billed monthly · cancel anytime</p>
+          <p class="promo-label" id="promoLabelCard">Limited-time offer — until August 5</p>
           <ul class="plan-feats">
             <li>✓ <b>Unlimited</b> food scans</li>
             <li>✓ Advanced 7-nutrient analysis</li>
@@ -440,9 +444,10 @@
         <li>✓ Progress tracking &amp; premium recipes</li>
       </ul>
       <div class="bill-toggle paywall-toggle">
-        <button class="bt-opt active" data-interval="monthly">Monthly · <b id="pwMonthly">$19.99</b></button>
+        <button class="bt-opt active" data-interval="monthly">Monthly · <b id="pwMonthly"><s>$19.99</s> $15</b></button>
         <button class="bt-opt" data-interval="yearly">Yearly · <b id="pwYearly">$99</b></button>
       </div>
+      <p class="promo-label" id="promoLabelPw">Limited-time offer — until August 5</p>
       <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
       <button class="btn btn-glow btn-block btn-lg" id="paywallCheckout">Join The Club</button>
       <p class="muted paywall-note" id="paywallNote">Cancel anytime.</p>
@@ -487,12 +492,22 @@
           <select class="cur-select" id="sgCurrency" aria-label="Currency"></select>
         </div>
         <div class="bill-toggle">
-          <button class="bt-opt active" data-interval="monthly">Monthly · <b id="sgMonthly">$19.99</b></button>
+          <button class="bt-opt active" data-interval="monthly">Monthly · <b id="sgMonthly"><s>$19.99</s> $15</b></button>
           <button class="bt-opt" data-interval="yearly">Yearly · <b id="sgYearly">$99</b></button>
         </div>
+        <p class="promo-label" id="promoLabelSg">Limited-time offer — until August 5</p>
         <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
         <button class="btn btn-glow btn-block btn-lg" id="sgCheckout">Continue to secure checkout →</button>
         <p class="muted checkout-note" id="sgNote"></p>
+        <!-- iOS/Android app only (Apple requires Restore + visible legal links) -->
+        <div class="native-only iap-extra">
+          <button class="sub-gate-restore" id="sgRestore" type="button">Restore purchases</button>
+          <p class="muted iap-legal">
+            <a href="/terms.html" target="_blank" rel="noopener">Terms of Use</a>
+            &middot;
+            <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+          </p>
+        </div>
         <button class="sub-gate-logout" id="sgLogout">Log out</button>
       </div>
     </div>
@@ -934,9 +949,10 @@
             <li>✓ Shopping lists</li>
           </ul>
           <div class="bill-toggle">
-            <button class="bt-opt active" data-interval="monthly">Monthly · <b id="upMonthly">$19.99</b></button>
+            <button class="bt-opt active" data-interval="monthly">Monthly · <b id="upMonthly"><s>$19.99</s> $15</b></button>
             <button class="bt-opt" data-interval="yearly">Yearly · <b id="upYearly">$99</b></button>
           </div>
+          <p class="promo-label" id="promoLabelUp">Limited-time offer — until August 5</p>
           <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
           <button class="btn btn-primary btn-block btn-lg" id="checkoutBtn">Upgrade to Premium</button>
           <p class="muted checkout-note" id="checkoutNote"></p>
@@ -985,6 +1001,11 @@
 
   <div class="toast" id="toast"></div>
   <script src="config.js?v=qa5"></script>
+  <!-- Capacitor bridge — sets the native API base + native features. Must load
+       before app.js. Inert (no-op) on the web. -->
+  <script src="js/native.js?v=1"></script>
+  <!-- RevenueCat In-App Purchase bridge — inert on the web -->
+  <script src="js/revenuecat.js?v=1"></script>
   <script src="js/app.js?v=56"></script>
 </body>
 </html>

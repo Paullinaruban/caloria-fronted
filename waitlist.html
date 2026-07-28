@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffeaf3" />
+  <title>Caloria Club — Become a Founding Member</title>
+  <meta name="description" content="Become one of the very first women shaping the future of wellness. Join Caloria Club before public launch and unlock exclusive founding benefits." />
+
+  <!-- Social sharing (referral links land here from TikTok / Instagram) -->
+  <link rel="canonical" href="https://caloriaclub.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Caloria" />
+  <meta property="og:url" content="https://caloriaclub.com/" />
+  <meta property="og:title" content="Caloria Club — Become a Founding Member" />
+  <meta property="og:description" content="Become one of the very first women shaping the future of wellness. Join before public launch and unlock exclusive founding benefits." />
+  <meta property="og:image" content="https://caloriaclub.com/assets/founder.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Caloria Club — Become a Founding Member" />
+  <meta name="twitter:description" content="Become one of the very first women shaping the future of wellness. Join before public launch and unlock exclusive founding benefits." />
+  <meta name="twitter:image" content="https://caloriaclub.com/assets/founder.jpg" />
+
+  <link rel="icon" href="/favicon.ico?v=1" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32.png?v=1" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=1" />
+
+  <link rel="stylesheet" href="css/fonts.css" />
+  <link rel="stylesheet" href="css/styles.css?v=39" />
+  <link rel="stylesheet" href="css/waitlist.css?v=2" />
+</head>
+<body class="wl-page">
+
+  <!-- Minimal header — brand only. No login, no pricing, no product nav. -->
+  <header class="wl-nav glass">
+    <a class="brand" href="/">
+      <img class="brand-logo" src="/assets/mascot-sm.png?v=1" alt="Caloria mascot" /><span class="brand-name">Caloria</span>
+    </a>
+    <button class="btn btn-primary btn-sm" data-scroll="club">Become a Founding Member</button>
+  </header>
+
+  <!-- HERO -->
+  <section class="wl-hero">
+    <div class="wl-hero-glow1"></div>
+    <div class="wl-hero-glow2"></div>
+    <div class="wl-hero-inner">
+      <span class="pill club-pill">✦ A Private Wellness Club for Women · Coming Soon</span>
+      <h1>Caloria Club</h1>
+      <p class="wl-lede">Become one of the very first women shaping the future of wellness.
+      Join before public launch and unlock exclusive founding benefits.</p>
+      <div class="wl-hero-cta">
+        <button class="btn btn-glow btn-lg" data-scroll="club">Become a Founding Member</button>
+        <span class="wl-hero-proof" id="wlHeroProof">Founding memberships are limited.</span>
+      </div>
+      <img class="wl-mascot" src="/assets/mascot-sm.png?v=1" alt="Caloria — your AI wellness companion" />
+    </div>
+  </section>
+
+  <!-- WAITLIST · JOIN FLOW (same ids as the Club section — powered by js/club.js) -->
+  <section id="club" class="section club-section">
+    <div class="club-card glass-strong">
+      <div class="club-glow club-glow-1"></div>
+      <div class="club-glow club-glow-2"></div>
+      <div class="club-inner">
+        <span class="pill club-pill">✦ Founding Members · Before Public Launch</span>
+        <h2 class="club-title">Join the Club</h2>
+        <p class="club-sub">Enter your email, answer three little questions,<br class="club-br">
+        and your Founding Member number is yours forever.</p>
+
+        <div class="club-benefits">
+          <div class="club-benefit"><span class="cb-icon">✨</span><b>Lifetime Founding Price</b><small>Locked in forever — it never goes up for you.</small></div>
+          <div class="club-benefit"><span class="cb-icon">🚀</span><b>Early Access</b><small>Step inside before the doors open to everyone.</small></div>
+          <div class="club-benefit"><span class="cb-icon">💎</span><b>First Access to Every New Feature</b><small>You experience everything first, always.</small></div>
+          <div class="club-benefit"><span class="cb-icon">👑</span><b>Exclusive Founding Member Badge</b><small>A mark only the first women will ever wear.</small></div>
+        </div>
+
+        <form class="club-form" id="clubForm" novalidate>
+          <div class="club-field" id="clubField">
+            <input type="email" id="clubEmail" placeholder="Your email address" autocomplete="email" aria-label="Email address" required />
+            <button class="btn btn-glow club-cta" id="clubSubmit" type="submit">
+              <span class="club-cta-label">Become a Founding Member</span>
+              <span class="club-cta-spinner" aria-hidden="true"></span>
+              <span class="club-cta-check" aria-hidden="true">✓</span>
+            </button>
+          </div>
+          <p class="club-error hidden" id="clubError" role="alert"></p>
+          <p class="club-proof" id="clubProofLine">Founding memberships are limited.</p>
+        </form>
+
+        <!-- Founding onboarding — three little questions, one heartbeat each -->
+        <div class="club-flow hidden" id="clubFlow" aria-live="polite">
+          <div class="cf-head">
+            <span class="cf-step-label" id="cfStepLabel">Question 1 of 3</span>
+            <div class="cf-dots" id="cfDots"><i></i><i></i><i></i></div>
+          </div>
+          <div class="cf-body" id="cfBody">
+            <h3 class="cf-title" id="cfTitle"></h3>
+            <p class="cf-sub" id="cfSub"></p>
+            <div class="cf-options" id="cfOptions"></div>
+            <div class="cf-other hidden" id="cfOther">
+              <input id="cfOtherInput" maxlength="140" placeholder="Tell me in your own words…" aria-label="Your answer" />
+              <button class="btn btn-primary" id="cfOtherGo" type="button">Continue</button>
+            </div>
+          </div>
+          <div class="cf-finish hidden" id="cfFinish">
+            <span class="cf-finish-heart">🩵</span>
+            <p>Welcoming you in…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOUNDER PROGRAM -->
+  <section class="wl-section">
+    <h2 class="wl-title">The Founding Member Program</h2>
+    <p class="wl-sub">Caloria wasn't built to be another app. It's a private wellness club —
+    AI meal scanning, personalized plans, a coach in your pocket, and a community of women growing together.
+    The very first women inside shape all of it.</p>
+    <div class="wl-founder-note">
+      <p>Every Founding Member receives a <b>permanent founder number</b> — №1, №2, №3… —
+      recorded forever. The earlier you join and the more friends you bring,
+      the closer to the front of the line you are on launch day. 🤍</p>
+    </div>
+  </section>
+
+  <!-- REFERRAL SYSTEM -->
+  <section class="wl-section">
+    <h2 class="wl-title">Move up the founders list</h2>
+    <p class="wl-sub">Your welcome email includes a personal invite link. Every friend who joins with it lifts you higher.</p>
+    <div class="wl-steps">
+      <div class="wl-step"><span class="wl-step-n">1</span><span class="wl-step-emoji">🤍</span><h3>Join the Club</h3><p>Enter your email and claim your Founding Member number.</p></div>
+      <div class="wl-step"><span class="wl-step-n">2</span><span class="wl-step-emoji">💌</span><h3>Share your link</h3><p>Your personal invite link arrives instantly — share it with your girls.</p></div>
+      <div class="wl-step"><span class="wl-step-n">3</span><span class="wl-step-emoji">👑</span><h3>Rise together</h3><p>Every friend who joins moves you up. Top founders get first access at launch.</p></div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="wl-section">
+    <h2 class="wl-title">Questions, answered</h2>
+    <div class="wl-faq">
+      <details>
+        <summary>What is Caloria Club?</summary>
+        <p>A private wellness club for women, created by fitness influencer Paullina Ruban. Inside: AI meal scanning that reads your plate from one photo, personalized meal &amp; training plans, a 24/7 wellness coach, and a members-only community — all designed around consistency, not restriction.</p>
+      </details>
+      <details>
+        <summary>What does being a Founding Member mean?</summary>
+        <p>You're one of the very first women inside — before public launch. You receive a permanent founder number, the lifetime founding price (it never goes up for you), early access before everyone else, first access to every new feature, and an exclusive Founding Member badge.</p>
+      </details>
+      <details>
+        <summary>Does joining cost anything?</summary>
+        <p>No — joining the Club is completely free. Your founding benefits, including the lifetime founding price, lock in the moment Caloria launches.</p>
+      </details>
+      <details>
+        <summary>When does Caloria launch?</summary>
+        <p>Soon. Founding Members receive exclusive founder updates while it's being built, and a private early-access invitation lands in your inbox before the public doors open.</p>
+      </details>
+      <details>
+        <summary>How do I move up the founders list?</summary>
+        <p>Share the personal invite link from your welcome email (or your founder page). Every friend who joins through it lifts you higher — rankings update instantly.</p>
+      </details>
+      <details>
+        <summary>I joined but can't find my email?</summary>
+        <p>Check Spam or Promotions for “🤍 You're officially a Founding Member.” Your founder page link is inside it, and you can rejoin with the same email any time — we'll recognize you and take you straight to your page.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- CLOSING CTA -->
+  <section class="wl-cta-band">
+    <h2>The first women are already inside.</h2>
+    <p>Your founder number is waiting — it only ever gets higher.</p>
+    <button class="btn btn-lg" data-scroll="club">Join the Caloria Club</button>
+  </section>
+
+  <footer class="wl-footer">
+    <div class="wl-footer-brand">◍ Caloria</div>
+    <p>Made by <strong>Paullina Ruban</strong> · Helping girls build healthy habits without restriction.</p>
+    <p class="footer-links"><a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a></p>
+    <p class="wl-footer-fine">© Caloria · Founding memberships are limited.</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+  <script src="config.js?v=live1"></script>
+  <script src="js/analytics.js?v=1"></script>
+  <script src="js/club.js?v=4"></script>
+  <script src="js/waitlist.js?v=1"></script>
+</body>
+</html>

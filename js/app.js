@@ -9,7 +9,9 @@
 
   let token = localStorage.getItem(TOKEN_KEY) || null;
   let user = null;
-  let cfg = { price_monthly: "$19.99", price_yearly: "$99", stripe_configured: false, images_enabled: false, trial_days: 0 };
+  let cfg = { price_monthly: "$15", price_yearly: "$99", price_monthly_compare: "$20",
+              price_monthly_usd: 15, price_yearly_usd: 99, price_monthly_compare_usd: 20,
+              stripe_configured: false, images_enabled: false, trial_days: 0 };
   let billingInterval = "monthly";
 
   /* ---------- api ---------- */
@@ -41,12 +43,16 @@
   async function boot() {
     try {
       try { cfg = await api("/api/config", { auth: false }); } catch (_) {}
+      // Native only: configure RevenueCat with the public SDK key from /api/config.
+      try { if (window.CaloriaIAP) await window.CaloriaIAP.configure(cfg); } catch (_) {}
       initCurrency();
       applyPricing();
       loadSocialProof();
       if (token) {
         try {
           user = (await api("/api/me")).user;
+          // Tie IAP purchases to this Caloria account (same id everywhere).
+          try { if (window.CaloriaIAP && user) await window.CaloriaIAP.identify(user.id); } catch (_) {}
         } catch (_) {
           // bad/expired token (e.g. server reset) — drop it and show the landing
           token = null; user = null; localStorage.removeItem(TOKEN_KEY);
@@ -157,6 +163,9 @@
     // who already onboarded skip straight to the subscription screen (STEP 11:
     // never repeat onboarding).
     if (!user.targets) {
+      // NEW ORDER: if the questionnaire was already completed before sign-up,
+      // attach those answers now (never ask twice). Otherwise run it.
+      if (hasStoredOb()) { attachOnboarding(); return; }
       hideGate(); obReset(); showView("onboard");
     } else {
       showGate();
@@ -215,19 +224,44 @@
     const el = $("#" + id); if (el) el.scrollIntoView({ behavior: "smooth" });
   }));
 
+  // ---- TEMPORARY WEBSITE PROMO (display only) ----------------------------
+  // Show $19.99 struck-through + $15/month with a "until August 5" label until
+  // Aug 5 (UTC), then automatically revert to $19.99. This affects the DISPLAYED
+  // price ONLY — the actual Stripe price and backend billing are NOT changed.
+  // Frontend-only and self-contained (does not depend on /api/config).
+  const PROMO_REGULAR = "$19.99";
+  const PROMO_PRICE   = "$15";
+  const PROMO_LABEL   = "Limited-time offer — until August 5";
+  const PROMO_ENDS_UTC = Date.UTC(2026, 7, 6, 0, 0, 0);   // active THROUGH Aug 5; reverts Aug 6 00:00 UTC
+  function promoActive() { return Date.now() < PROMO_ENDS_UTC; }
+
   function applyPricing() {
-    // ONE base price for everyone. Stripe Adaptive Pricing (enabled on the
-    // account) presents and charges each customer in their LOCAL currency at
-    // checkout automatically — so we simply show the base price here.
-    const m = cfg.price_monthly, y = cfg.price_yearly;
+    const y = cfg.price_yearly;
+    const promo = promoActive();
+    const m = promo ? PROMO_PRICE : PROMO_REGULAR;         // monthly price shown
     $("#priceAmt") && ($("#priceAmt").textContent = billingInterval === "monthly" ? m : y);
     $("#pricePer") && ($("#pricePer").textContent = billingInterval === "monthly" ? "/month" : "/year");
     $("#priceNote") && ($("#priceNote").textContent = billingInterval === "monthly" ? "Billed monthly · cancel anytime" : "Billed yearly · best value");
-    $("#upMonthly") && ($("#upMonthly").textContent = m);
+    // Struck-through original price — monthly + during the promo only.
+    const cmp = $("#priceCompare");
+    if (cmp) {
+      cmp.textContent = PROMO_REGULAR;
+      cmp.style.display = (billingInterval === "monthly" && promo) ? "" : "none";
+    }
+    // "$19.99 $15" in every monthly toggle (paywall / subscription gate / upgrade).
+    const monthlyHTML = promo ? ("<s>" + PROMO_REGULAR + "</s> " + PROMO_PRICE) : PROMO_REGULAR;
+    ["upMonthly", "pwMonthly", "sgMonthly"].forEach((id) => { const el = $("#" + id); if (el) el.innerHTML = monthlyHTML; });
+    // "Limited-time offer — until August 5" label wherever the monthly price shows.
+    ["promoLabelCard", "promoLabelPw", "promoLabelSg", "promoLabelUp"].forEach((id) => {
+      const el = $("#" + id); if (el) { el.textContent = PROMO_LABEL; el.style.display = promo ? "" : "none"; }
+    });
+    // Yearly savings %, computed from the single pricing source so it's never stale.
+    if (cfg.price_monthly_usd && cfg.price_yearly_usd) {
+      const pct = Math.round((1 - cfg.price_yearly_usd / (cfg.price_monthly_usd * 12)) * 100);
+      if (pct > 0) $$(".save").forEach((el) => (el.textContent = "save " + pct + "%"));
+    }
     $("#upYearly") && ($("#upYearly").textContent = y);
-    $("#pwMonthly") && ($("#pwMonthly").textContent = m);
     $("#pwYearly") && ($("#pwYearly").textContent = y);
-    $("#sgMonthly") && ($("#sgMonthly").textContent = m);
     $("#sgYearly") && ($("#sgYearly").textContent = y);
     // Subscription-only: no trial anywhere.
     $("#paywallTrial") && ($("#paywallTrial").textContent = "Premium");
@@ -316,10 +350,20 @@
   }
   function closeAuth() { modal.classList.remove("show"); }
 
-  $$("[data-auth]").forEach((b) => b.addEventListener("click", () => openAuth(b.dataset.auth)));
+  // NEW ORDER: "Join the Club" (signup) for a signed-out visitor now starts the
+  // existing questionnaire first; login still opens the auth form directly.
+  $$("[data-auth]").forEach((b) => b.addEventListener("click", () => {
+    const m = b.dataset.auth;
+    if (m === "signup" && !token) return startJoinFlow();
+    openAuth(m);
+  }));
   $("#authClose").addEventListener("click", closeAuth);
   modal.addEventListener("click", (e) => { if (e.target === modal) closeAuth(); });
-  $("#authSwitch").addEventListener("click", () => openAuth(authMode === "signup" ? "login" : "signup"));
+  $("#authSwitch").addEventListener("click", () => {
+    const next = authMode === "signup" ? "login" : "signup";
+    if (next === "signup" && !token) { closeAuth(); return startJoinFlow(); }
+    openAuth(next);
+  });
 
   /* ---------- email verification banner ---------- */
   function updateVerifyBanner() {
@@ -506,6 +550,8 @@
       const res = await api(path, { method: "POST", body, auth: false });
       token = res.token; localStorage.setItem(TOKEN_KEY, token);
       user = res.user;
+      // Native only: attach IAP purchases to this account.
+      try { if (window.CaloriaIAP && user) await window.CaloriaIAP.identify(user.id); } catch (_) {}
       closeAuth();
       route();
       updateVerifyBanner();
@@ -528,7 +574,9 @@
 
   async function doLogout() {
     try { await api("/api/auth/logout", { method: "POST" }); } catch (_) {}
+    try { if (window.CaloriaIAP) await window.CaloriaIAP.logout(); } catch (_) {}
     token = null; user = null; localStorage.removeItem(TOKEN_KEY);
+    clearOb();                       // don't carry questionnaire answers to another account
     hideGate();
     route();
   }
@@ -604,8 +652,28 @@
   // screen. Payment now comes AFTER onboarding, not before.
   const OB_PREVIEW = OB_STEPS.length - 1;
   let obIndex = 0, obAns = {}, obSubmitted = false;
+  // ---- NEW ONBOARDING ORDER: questionnaire runs BEFORE account creation ----
+  // Answers are kept in temp state (memory + localStorage so they survive a
+  // reload / the native app's post-signup reload), then attached to the account
+  // right after sign-up + verification. The questionnaire itself is unchanged.
+  let obPreviewTargets = null;             // targets computed pre-account (results screen)
+  let attaching = false;                   // guards the one-time post-signup attach
+  const OB_STORE = "caloria.onboarding.answers";
+  function persistOb() { try { localStorage.setItem(OB_STORE, JSON.stringify(obAns)); } catch (_) {} }
+  function loadOb() { try { const v = JSON.parse(localStorage.getItem(OB_STORE) || "null"); if (v && typeof v === "object") obAns = v; } catch (_) {} }
+  function clearOb() { obPreviewTargets = null; try { localStorage.removeItem(OB_STORE); } catch (_) {} }
+  function hasStoredOb() { try { return !!localStorage.getItem(OB_STORE); } catch (_) { return false; } }
+  // Anonymous "Join the Club" entry point — show the existing questionnaire first.
+  function startJoinFlow() {
+    loadOb();                              // preserve answers if returning
+    obIndex = 0; obSubmitted = false; obPreviewTargets = null;
+    $("#site").classList.add("hidden");
+    $("#app").classList.remove("hidden");
+    obRender();
+    showView("onboard");
+  }
 
-  function obReset() { obIndex = 0; obAns = {}; obSubmitted = false; obRender(); }
+  function obReset() { obIndex = 0; obAns = {}; obSubmitted = false; obPreviewTargets = null; obRender(); }
 
   function obRender() {
     const s = OB_STEPS[obIndex];
@@ -658,7 +726,7 @@
   };
 
   function renderConversion() {
-    const t = (user && user.targets) || {};
+    const t = (user && user.targets) || obPreviewTargets || {};
     const physique = obAns.physique || "wellness";
     const focus = WORKOUT_FOCUS[obAns.goal] || "personalized training sessions";
     const level = LEVEL_LABEL[obAns.experience] || "your level";
@@ -710,11 +778,13 @@
     } else {
       obAns[step.key] = o.v; obAns[step.key + "_i"] = i; obAns[step.key + "_label"] = o.label;
     }
+    persistOb();
     obRender();
   }
 
-  async function obSubmitProfile() {
-    const profile = {
+  // Build the exact same profile payload the questionnaire always produced.
+  function buildProfile() {
+    return {
       gender: "female",
       height: obAns.height != null ? obAns.height : 166,
       weight: obAns.weight != null ? obAns.weight : 60,
@@ -731,8 +801,35 @@
       confidence: obAns.confidence || null,
       lifestyle: obAns.lifestyle || null,
     };
-    user = (await api("/api/onboarding", { method: "POST", body: { profile } })).user;
+  }
+
+  async function obSubmitProfile() {
+    const profile = buildProfile();
+    if (token) {
+      // Logged in (e.g. premium re-onboard) — save straight to the account.
+      user = (await api("/api/onboarding", { method: "POST", body: { profile } })).user;
+    } else {
+      // NEW ORDER: no account yet — compute targets for the results screen only
+      // (same math, nothing saved). Answers are attached after sign-up + verify.
+      const r = await api("/api/onboarding/preview", { method: "POST", body: { profile }, auth: false });
+      obPreviewTargets = r.targets || {};
+    }
     obSubmitted = true;
+  }
+
+  // Called by route() once the (now verified) account exists and answers are
+  // waiting — attach them via the authenticated endpoint, exactly once.
+  async function attachOnboarding() {
+    if (attaching) return; attaching = true;
+    loadOb();
+    try {
+      user = (await api("/api/onboarding", { method: "POST", body: { profile: buildProfile() } })).user;
+      clearOb();
+    } catch (err) {
+      attaching = false; hideGate(); obReset(); showView("onboard"); return;  // nothing lost — show the questionnaire
+    }
+    attaching = false;
+    route();   // now has targets → subscription/payment screen
   }
 
   $("#obBack").addEventListener("click", () => { if (obIndex > 0) { obIndex--; obRender(); } });
@@ -745,10 +842,14 @@
     if (s.type === "number") {
       const v = +$("#obInput").value;
       obAns[s.key] = Math.max(s.min, Math.min(s.max, v || s.def));
+      persistOb();
     }
     if (s.type === "preview") {
-      // STEP 8: only NOW check Premium. Members enter the app; everyone else sees
-      // the subscription screen (Monthly $19.99 / Yearly $99).
+      // NEW ORDER: if there's no account yet, create it NOW (after the
+      // questionnaire). Answers are already saved locally and get attached
+      // to the account after verification.
+      if (!token) { persistOb(); openAuth("signup"); return; }
+      // Logged in: members enter the app; everyone else sees the payment screen.
       if (hasAccess()) { toast("Welcome to the Supermodel Wellness Club 👑"); showView("dashboard"); }
       else { showGate(); }
       return;
@@ -1795,6 +1896,38 @@
     if (btn) { btn.disabled = true; btn.dataset.prev = btn.textContent; btn.textContent = "Opening secure checkout…"; }
     const note = $("#sgNote"); if (note) note.classList.remove("checkout-error");
     const reenable = () => { checkoutInFlight = false; if (btn) { btn.disabled = false; if (btn.dataset.prev) btn.textContent = btn.dataset.prev; } };
+
+    // ---- NATIVE APP: Apple In-App Purchase via RevenueCat (never web Stripe) ----
+    // Apple/Google require IAP for in-app digital subscriptions, so inside the
+    // native app we route to RevenueCat instead of Stripe Checkout. The website
+    // path below is completely unchanged.
+    if (window.CaloriaIAP && window.CaloriaIAP.isEnabled) {
+      if (btn) btn.textContent = "Contacting the App Store…";
+      try {
+        const ok = await window.CaloriaIAP.purchase(billingInterval);
+        if (ok) {
+          // Immediate unlock: have the backend verify with RevenueCat, then refresh.
+          try { user = (await api("/api/iap/sync", { method: "POST", body: {} })).user; }
+          catch (_) { try { user = (await api("/api/me")).user; } catch (__) {} }
+          toast("Welcome to Caloria 💗");
+          route(); updateVerifyBanner();
+        }
+        reenable();
+        return;
+      } catch (err) {
+        checkoutError((err && err.message) || "The purchase couldn't be completed.");
+        reenable();
+        return;
+      }
+    }
+    // Native app but IAP not configured yet: do NOT fall back to web Stripe
+    // (that would risk App Store rejection). Fail clearly instead.
+    if (window.CaloriaNative && window.CaloriaNative.isNative) {
+      checkoutError("In-app purchases aren't available right now. Please update the app or try again later.");
+      reenable();
+      return;
+    }
+
     try {
       const res = await api("/api/billing/checkout", { method: "POST", body: { interval: billingInterval } });
       // On success we navigate away — deliberately leave the button disabled and the
@@ -1820,6 +1953,25 @@
   });
   const sgLogout = $("#sgLogout");
   if (sgLogout) sgLogout.addEventListener("click", doLogout);
+
+  // Native In-App Purchase: "Restore purchases" (Apple requirement). On the web
+  // #sgRestore is hidden and this listener never fires.
+  const sgRestore = $("#sgRestore");
+  if (sgRestore) sgRestore.addEventListener("click", async () => {
+    if (!(window.CaloriaIAP && window.CaloriaIAP.isEnabled)) return;
+    sgRestore.disabled = true; const prev = sgRestore.textContent; sgRestore.textContent = "Restoring…";
+    try {
+      const restored = await window.CaloriaIAP.restore();
+      if (restored) {
+        try { user = (await api("/api/iap/sync", { method: "POST", body: {} })).user; }
+        catch (_) { try { user = (await api("/api/me")).user; } catch (__) {} }
+        toast("Subscription restored 💗"); route(); updateVerifyBanner();
+      } else {
+        toast("No previous purchase found on this Apple ID.");
+      }
+    } catch (_) { toast("Couldn't restore purchases. Please try again."); }
+    finally { sgRestore.disabled = false; sgRestore.textContent = prev; }
+  });
 
   /* ===================== paywall (conversion) ===================== */
   const paywall = $("#paywallModal");

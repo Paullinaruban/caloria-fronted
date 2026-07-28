@@ -203,6 +203,10 @@ a { color: inherit; text-decoration: none; }
 .plan-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--grad-aqua); color: #0c5b53; font-weight: 800; font-size: 12px; padding: 5px 14px; border-radius: 100px; box-shadow: var(--sh-aqua); }
 .plan h3 { font-size: 24px; }
 .plan-price { display: flex; align-items: baseline; gap: 4px; margin: 12px 0 4px; }
+.pp-compare { font-family: var(--font-head); font-size: 26px; font-weight: 700; color: var(--ink-soft); opacity: .55; text-decoration: line-through; text-decoration-thickness: 2px; margin-right: 4px; }
+/* Temporary promotional-price label (display only). */
+.promo-label { margin: 6px 0 0; font-size: 12px; font-weight: 700; letter-spacing: .2px; color: var(--rose-deep, #cc4a86); }
+.bt-opt s, .plan-price s, .pp-compare { opacity: .55; }
 .pp-amt { font-family: var(--font-head); font-size: 48px; font-weight: 700; color: var(--rose-deep); }
 .pp-per { color: var(--ink-soft); font-weight: 600; }
 .pp-note { color: var(--ink-soft); font-size: 13px; margin-bottom: 18px; }
