@@ -9,8 +9,8 @@
 
   let token = localStorage.getItem(TOKEN_KEY) || null;
   let user = null;
-  let cfg = { price_monthly: "$15", price_yearly: "$99", price_monthly_compare: "$20",
-              price_monthly_usd: 15, price_yearly_usd: 99, price_monthly_compare_usd: 20,
+  let cfg = { price_monthly: "$19", price_yearly: "$99", price_monthly_compare: "$25",
+              price_monthly_usd: 19, price_yearly_usd: 99, price_monthly_compare_usd: 25,
               stripe_configured: false, images_enabled: false, trial_days: 0 };
   let billingInterval = "monthly";
 
@@ -225,35 +225,28 @@
   }));
 
   // ---- TEMPORARY WEBSITE PROMO (display only) ----------------------------
-  // Show $19.99 struck-through + $15/month with a "until August 5" label until
-  // Aug 5 (UTC), then automatically revert to $19.99. This affects the DISPLAYED
-  // price ONLY — the actual Stripe price and backend billing are NOT changed.
-  // Frontend-only and self-contained (does not depend on /api/config).
-  const PROMO_REGULAR = "$19.99";
-  const PROMO_PRICE   = "$15";
-  const PROMO_LABEL   = "Limited-time offer — until August 5";
-  const PROMO_ENDS_UTC = Date.UTC(2026, 7, 6, 0, 0, 0);   // active THROUGH Aug 5; reverts Aug 6 00:00 UTC
-  function promoActive() { return Date.now() < PROMO_ENDS_UTC; }
-
+  // Discounted monthly pricing everywhere: $25 struck through, $19 emphasized.
+  // Values come from /api/config (the backend single source of truth); the
+  // literals here are only fallbacks used until that request returns.
   function applyPricing() {
-    const y = cfg.price_yearly;
-    const promo = promoActive();
-    const m = promo ? PROMO_PRICE : PROMO_REGULAR;         // monthly price shown
+    const y   = cfg.price_yearly || "$99";
+    const m   = cfg.price_monthly || "$19";                 // emphasized price
+    const cmp = cfg.price_monthly_compare || "$25";         // struck-through "was" price
     $("#priceAmt") && ($("#priceAmt").textContent = billingInterval === "monthly" ? m : y);
     $("#pricePer") && ($("#pricePer").textContent = billingInterval === "monthly" ? "/month" : "/year");
     $("#priceNote") && ($("#priceNote").textContent = billingInterval === "monthly" ? "Billed monthly · cancel anytime" : "Billed yearly · best value");
-    // Struck-through original price — monthly + during the promo only.
-    const cmp = $("#priceCompare");
-    if (cmp) {
-      cmp.textContent = PROMO_REGULAR;
-      cmp.style.display = (billingInterval === "monthly" && promo) ? "" : "none";
+    // Struck-through anchor price — always shown on the monthly view.
+    const cmpEl = $("#priceCompare");
+    if (cmpEl) {
+      cmpEl.textContent = cmp;
+      cmpEl.style.display = (billingInterval === "monthly") ? "" : "none";
     }
-    // "$19.99 $15" in every monthly toggle (paywall / subscription gate / upgrade).
-    const monthlyHTML = promo ? ("<s>" + PROMO_REGULAR + "</s> " + PROMO_PRICE) : PROMO_REGULAR;
+    // "$25 $19" in every monthly toggle (paywall / subscription gate / upgrade).
+    const monthlyHTML = "<s>" + cmp + "</s> " + m;
     ["upMonthly", "pwMonthly", "sgMonthly"].forEach((id) => { const el = $("#" + id); if (el) el.innerHTML = monthlyHTML; });
-    // "Limited-time offer — until August 5" label wherever the monthly price shows.
+    // Retire the old time-limited promo labels.
     ["promoLabelCard", "promoLabelPw", "promoLabelSg", "promoLabelUp"].forEach((id) => {
-      const el = $("#" + id); if (el) { el.textContent = PROMO_LABEL; el.style.display = promo ? "" : "none"; }
+      const el = $("#" + id); if (el) el.style.display = "none";
     });
     // Yearly savings %, computed from the single pricing source so it's never stale.
     if (cfg.price_monthly_usd && cfg.price_yearly_usd) {
