@@ -37,8 +37,15 @@
   <link rel="stylesheet" href="css/styles.css?v=39" />
   <!-- Native (Capacitor) refinements — inert on the web -->
   <link rel="stylesheet" href="css/native.css?v=1" />
+
+  <!-- Meta Pixel (ID 1089413896799147) — self-hosted so the strict CSP needs no
+       'unsafe-inline'. Fires PageView on load; funnel/conversion events are fired
+       by app.js at the correct moments. -->
+  <script src="js/pixel.js?v=1"></script>
 </head>
 <body>
+  <noscript><img height="1" width="1" style="display:none" alt=""
+    src="https://www.facebook.com/tr?id=1089413896799147&ev=PageView&noscript=1"/></noscript>
 
   <!-- ======================= PUBLIC SITE ======================= -->
   <div id="site">

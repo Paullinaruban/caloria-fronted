@@ -111,6 +111,11 @@
     const g = $("#subGate"); if (g) g.classList.remove("hidden");
     applyPricing();
     updateGateForVerification();
+    // Meta Pixel: user is viewing the subscription offer (once per page load).
+    if (window.CaloriaPixel && !showGate._vc) {
+      showGate._vc = true;
+      CaloriaPixel.viewContent(billingInterval, planValue(billingInterval), "USD");
+    }
   }
   function hideGate() {
     $("#app").classList.remove("gated");
@@ -174,6 +179,28 @@
 
   // Poll for the subscription to activate after returning from Stripe Checkout
   // (the webhook may land a moment after the redirect).
+  // ---- Meta Pixel value helpers ----
+  // Numeric plan price in USD, taken from /api/config (config.MONTHLY_PRICE_USD /
+  // YEARLY_PRICE_USD — the same value Stripe's Price is minted from). Never a
+  // hardcoded pixel constant.
+  function planValue(interval) {
+    return interval === "yearly" ? (cfg.price_yearly_usd || 99) : (cfg.price_monthly_usd || 19);
+  }
+  // Fire the Meta 'Purchase' event — ONLY from a confirmed, paid activation.
+  // Reads the plan chosen at checkout (persisted across the Stripe redirect) so
+  // value/currency are accurate; dedups by Stripe session id so a refresh of the
+  // success URL can't double-count.
+  function firePurchase(sessionId) {
+    if (!window.CaloriaPixel) return;
+    let pend = null;
+    try { pend = JSON.parse(localStorage.getItem("caloria.pendingCheckout") || "null"); } catch (_) {}
+    const interval = (pend && pend.interval) || (user && user.plan_interval) || billingInterval;
+    const value = (pend && pend.value) || planValue(interval);
+    const currency = (pend && pend.currency) || "USD";
+    CaloriaPixel.purchase(sessionId || ("t" + Date.now()), interval, value, currency);
+    try { localStorage.removeItem("caloria.pendingCheckout"); } catch (_) {}
+  }
+
   async function confirmSubscription(sessionId) {
     showGate();
     const note = $("#sgNote"), btn = $("#sgCheckout");
@@ -186,11 +213,11 @@
         const r = await api("/api/billing/confirm", { method: "POST", body: { session_id: sessionId } });
         if (r && r.user) user = r.user;
       } catch (_) {}
-      if (hasAccess()) { if (btn) btn.disabled = false; toast("Welcome to Caloria Premium 👑"); route(); return; }
+      if (hasAccess()) { firePurchase(sessionId); if (btn) btn.disabled = false; toast("Welcome to Caloria Premium 👑"); route(); return; }
     }
     for (let i = 0; i < 15; i++) {
       try { user = (await api("/api/me")).user; } catch (_) {}
-      if (hasAccess()) { if (btn) btn.disabled = false; toast("Welcome to Caloria Premium 👑"); route(); return; }
+      if (hasAccess()) { firePurchase(sessionId); if (btn) btn.disabled = false; toast("Welcome to Caloria Premium 👑"); route(); return; }
       await new Promise((r) => setTimeout(r, 2500));
     }
     if (btn) btn.disabled = false;
@@ -1920,6 +1947,15 @@
       reenable();
       return;
     }
+
+    // Meta Pixel: InitiateCheckout (web/Stripe path only — the native IAP path
+    // above never reaches here). Persist the chosen plan so the Purchase event,
+    // fired after the Stripe redirect reloads the page, reports the exact value.
+    try {
+      const _v = planValue(billingInterval);
+      localStorage.setItem("caloria.pendingCheckout", JSON.stringify({ interval: billingInterval, value: _v, currency: "USD" }));
+      if (window.CaloriaPixel) CaloriaPixel.initiateCheckout(billingInterval, _v, "USD");
+    } catch (_) {}
 
     try {
       const res = await api("/api/billing/checkout", { method: "POST", body: { interval: billingInterval } });
