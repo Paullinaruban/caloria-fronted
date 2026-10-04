@@ -466,6 +466,9 @@
     resetEmailAddr = email || "";
     resetCodeVal = "";
     $("#resetEmail").textContent = resetEmailAddr || "your email";
+    // Associate the new password with this account so password managers (incl.
+    // Safari/iCloud Keychain) offer to UPDATE the saved credential.
+    const ru = $("#resetUsername"); if (ru) ru.value = resetEmailAddr || "";
     $("#resetCodeInput").value = "";
     $("#resetPassword").value = "";
     $("#resetCodeError").classList.add("hidden");
