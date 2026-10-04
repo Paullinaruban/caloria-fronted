@@ -310,6 +310,11 @@
         <h2>Choose a new password</h2>
         <p class="modal-sub">Enter a new password for your account.</p>
         <form id="resetForm">
+          <!-- Hidden username field: lets password managers (incl. Safari / iCloud
+               Keychain) associate the NEW password with this account and offer to
+               UPDATE the saved credential, so a later login won't autofill the old one. -->
+          <input id="resetUsername" type="email" name="username" autocomplete="username" readonly tabindex="-1" aria-hidden="true"
+                 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);border:0" />
           <label class="field pw-field"><span>New password</span>
             <input id="resetPassword" type="password" autocomplete="new-password" placeholder="••••••••" required minlength="6" />
             <button type="button" class="pw-toggle" data-pw="resetPassword" aria-label="Show password" aria-pressed="false">
