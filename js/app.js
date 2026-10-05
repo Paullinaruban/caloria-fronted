@@ -517,16 +517,45 @@
   });
 
   // Step 2 → set the new password (consumes the code).
+  // Best-effort sync of the browser's saved password after a reset. Uses the
+  // Credential Management API (Chromium: Chrome/Edge/Android). It's a silent
+  // no-op where unsupported (e.g. Safari / iCloud Keychain) and never throws, so
+  // it can only help, never break. Not a substitute for the auto-login above —
+  // auto-login is what reliably gets the user in regardless of browser.
+  async function rememberCredential(email, password) {
+    try {
+      if (window.PasswordCredential && navigator.credentials && email && password) {
+        await navigator.credentials.store(new window.PasswordCredential({ id: email, password, name: email }));
+      }
+    } catch (_) { /* unsupported / blocked — ignore */ }
+  }
+
   $("#resetForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const pw = $("#resetPassword").value;
     const err = $("#resetError"); err.classList.add("hidden");
     $("#resetSubmit").disabled = true;
     try {
-      await api("/api/auth/reset", { method: "POST", body: { email: resetEmailAddr, code: resetCodeVal, password: pw }, auth: false });
-      closeReset();
-      toast("Password updated — please log in 💗");
-      openAuth("login");
+      const res = await api("/api/auth/reset", { method: "POST", body: { email: resetEmailAddr, code: resetCodeVal, password: pw }, auth: false });
+      if (res && res.token) {
+        // Auto-login: the reset returned a fresh session, so sign in directly —
+        // the user never re-types the new password (which a saved-password
+        // manager can autofill with the OLD value, causing a false login error).
+        token = res.token; localStorage.setItem(TOKEN_KEY, token);
+        user = res.user;
+        // Best-effort: update the browser's SAVED password to the new one so a
+        // future manual login can't autofill the stale old value.
+        await rememberCredential(resetEmailAddr, pw);
+        try { if (window.CaloriaIAP && user) await window.CaloriaIAP.identify(user.id); } catch (_) {}
+        closeReset();
+        toast("Password updated — you're all set 💗");
+        route(); updateVerifyBanner();
+      } else {
+        // Backward-compatible fallback (older backend without auto-login).
+        closeReset();
+        toast("Password updated — please log in 💗");
+        openAuth("login");
+      }
     } catch (ex) {
       // If the code expired between steps, send them back to the code step.
       if (ex.data && ex.data.expired) { $("#resetStepPassword").classList.add("hidden"); $("#resetStepCode").classList.remove("hidden"); $("#resetCodeError").textContent = ex.message; $("#resetCodeError").classList.remove("hidden"); }
