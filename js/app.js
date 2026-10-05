@@ -576,6 +576,23 @@
     } finally { $("#resetSubmit").disabled = false; }
   });
 
+  // Live countdown for a throttled resend (driven by the backend's Retry-After).
+  // Keeps the button disabled and ticks the message down once per second,
+  // restoring "Resend" exactly when the cooldown hits zero.
+  function runResendCooldown(retryAfter) {
+    const btn = $("#resetResendBtn"); const msg = $("#resetResendMsg");
+    btn.disabled = true;
+    let secs = Math.min(Math.max(parseInt(retryAfter, 10) || 60, 1), 60);
+    const render = () => { msg.textContent = `Please wait ${secs} second${secs === 1 ? "" : "s"} before requesting another code.`; };
+    render();
+    const timer = setInterval(() => {
+      secs -= 1;
+      if (secs <= 0) { clearInterval(timer); btn.disabled = false; msg.textContent = ""; }
+      else render();
+    }, 1000);
+    return timer;
+  }
+
   $("#resetResendBtn").addEventListener("click", async () => {
     const btn = $("#resetResendBtn"); btn.disabled = true;
     const r = await requestReset(resetEmailAddr);
@@ -583,11 +600,8 @@
       $("#resetResendMsg").textContent = "New code sent 💌";
       setTimeout(() => { btn.disabled = false; $("#resetResendMsg").textContent = ""; }, 8000);
     } else {
-      // Backend throttled this resend — show the real cooldown and keep the
-      // button disabled until it elapses, instead of a misleading "sent".
-      $("#resetResendMsg").textContent = r.message;
-      setTimeout(() => { btn.disabled = false; $("#resetResendMsg").textContent = ""; },
-                 Math.min(Math.max(r.retryAfter, 1), 60) * 1000);
+      // Backend throttled this resend — live countdown, button stays disabled.
+      runResendCooldown(r.retryAfter);
     }
   });
 
