@@ -484,16 +484,29 @@
   resetModal.addEventListener("click", (e) => { if (e.target === resetModal) closeReset(); });
 
   async function requestReset(email) {
-    // Neutral response — never reveal whether the account exists.
-    try { await api("/api/auth/forgot", { method: "POST", body: { email }, auth: false }); } catch (_) {}
+    // Neutral response — never reveal whether the account exists. Returns a status
+    // so callers can surface the backend cooldown (HTTP 429) instead of a fake
+    // "sent" message. A 429 is frequency-based (not existence-based), so showing
+    // it leaks nothing; any other error stays neutral (reported as ok).
+    try {
+      await api("/api/auth/forgot", { method: "POST", body: { email }, auth: false });
+      return { ok: true };
+    } catch (ex) {
+      if (ex && ex.status === 429) {
+        const secs = (ex.data && ex.data.retry_after) || 60;
+        return { ok: false, retryAfter: secs,
+                 message: (ex.data && ex.data.error) || `Please wait ${secs} seconds before requesting another code.` };
+      }
+      return { ok: true };  // stay neutral on network/other errors
+    }
   }
   $("#authForgot").addEventListener("click", async () => {
     const email = $("#authEmail").value.trim();
     if (!email) { $("#authError").textContent = "Enter your email above first."; $("#authError").classList.remove("hidden"); return; }
-    await requestReset(email);
+    const r = await requestReset(email);
     closeAuth();
     openResetCode(email);
-    toast("If that email has an account, a 6-digit code is on its way 💌");
+    toast(r.ok ? "If that email has an account, a 6-digit code is on its way 💌" : r.message);
   });
 
   // Only sanitize digits in the code field.
@@ -565,9 +578,17 @@
 
   $("#resetResendBtn").addEventListener("click", async () => {
     const btn = $("#resetResendBtn"); btn.disabled = true;
-    await requestReset(resetEmailAddr);
-    $("#resetResendMsg").textContent = "New code sent 💌";
-    setTimeout(() => { btn.disabled = false; $("#resetResendMsg").textContent = ""; }, 8000);
+    const r = await requestReset(resetEmailAddr);
+    if (r.ok) {
+      $("#resetResendMsg").textContent = "New code sent 💌";
+      setTimeout(() => { btn.disabled = false; $("#resetResendMsg").textContent = ""; }, 8000);
+    } else {
+      // Backend throttled this resend — show the real cooldown and keep the
+      // button disabled until it elapses, instead of a misleading "sent".
+      $("#resetResendMsg").textContent = r.message;
+      setTimeout(() => { btn.disabled = false; $("#resetResendMsg").textContent = ""; },
+                 Math.min(Math.max(r.retryAfter, 1), 60) * 1000);
+    }
   });
 
   /* ---------- handle post-checkout return on load ---------- */
