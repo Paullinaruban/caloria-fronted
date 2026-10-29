@@ -1,0 +1,175 @@
+/* ===========================================================================
+   Winter Arc — seasonal layer. Built ENTIRELY on the existing brand tokens
+   (--rose / --rose-deep / --aqua / --ink / --glass-strong …). Festive colors
+   appear only as small decorative accents, never as a new global palette.
+   Everything here is scoped under .wa-* / #winterArcCard / #snowRoot so it can
+   never leak into the rest of the app, and the whole layer is inert unless
+   js/winter.js mounts it.
+   =========================================================================== */
+:root {
+  --wa-red:   #e8384f;   /* santa-hat red — accent only */
+  --wa-snow:  #ffffff;
+  --wa-ginger:#b5744a;   /* gingerbread brown — accent only */
+}
+
+/* ---- Swapped Christmas mascot: transparent-alpha cutout, so it blends into the
+   hero with no card, border or rectangular boundary. object-fit:contain keeps
+   the full figure (hat → drink) without cropping or distortion. ---- */
+.is-winter-mascot { object-fit: contain; background: transparent; }
+
+/* ---- Global snow overlay (decorative, never interactive) ---- */
+#snowRoot { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+#snowRoot canvas { position: fixed; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; }
+
+/* ---- Home announcement card ---- */
+.wa-card-slot { margin: 0 0 14px; }
+.wa-card {
+  position: relative; overflow: hidden;
+  border-radius: var(--r-lg);
+  padding: 18px 18px 16px;
+  background:
+    radial-gradient(120px 80px at 92% 6%, rgba(127,227,218,.28), transparent 70%),
+    linear-gradient(135deg, rgba(255,215,231,.75) 0%, rgba(255,255,255,.88) 60%);
+  border: 1px solid var(--glass-brd);
+  box-shadow: var(--sh-md);
+  animation: wa-rise .5s cubic-bezier(.2,.8,.2,1) both;
+}
+.wa-card .wa-eyebrow { color: var(--rose-deep); }
+.wa-card h3 { font-family: var(--font-head); font-size: 22px; line-height: 1.1;
+  margin: 4px 0 6px; color: var(--ink); }
+.wa-card p { margin: 0 0 14px; color: var(--ink-soft); font-size: 14px; }
+.wa-card .btn { width: auto; }
+.wa-card-mascot {
+  position: absolute; right: -6px; bottom: -8px; width: 92px; height: 92px;
+  object-fit: contain; border-radius: 16px;
+  filter: drop-shadow(0 6px 14px rgba(242,77,140,.18));
+}
+.wa-card-body { max-width: calc(100% - 92px); }
+.wa-eyebrow { display: inline-block; font-size: 11px; font-weight: 800;
+  letter-spacing: .14em; text-transform: uppercase; }
+/* tiny festive stickers floating on the card */
+.wa-card .wa-deco { position: absolute; font-size: 16px; opacity: .9;
+  animation: wa-float 4s ease-in-out infinite; }
+.wa-card .wa-deco.d1 { top: 10px; left: 12px; }
+.wa-card .wa-deco.d2 { top: 40px; right: 96px; animation-delay: 1.2s; }
+.wa-mini-progress { height: 8px; border-radius: 99px; background: rgba(242,77,140,.12);
+  overflow: hidden; margin: 2px 0 12px; }
+.wa-mini-progress > i { display: block; height: 100%; border-radius: 99px;
+  background: var(--grad-rose); transition: width .5s ease; }
+
+/* ---- Winter Arc view ---- */
+.wa-back { background: none; border: 0; color: var(--rose-deep); font-weight: 700;
+  font-size: 15px; padding: 6px 2px; margin-bottom: 6px; cursor: pointer; }
+.wa-intro { display: flex; align-items: center; gap: 14px; padding: 16px;
+  border-radius: var(--r-lg); margin-bottom: 14px; }
+.wa-intro-mascot { width: 72px; height: 72px; object-fit: contain; border-radius: 16px;
+  flex: 0 0 auto; }
+.wa-intro-copy h2 { font-family: var(--font-head); font-size: 22px; margin: 2px 0; color: var(--ink); }
+.wa-intro-copy .wa-eyebrow { color: var(--rose-deep); }
+
+.wa-progress { border-radius: var(--r-md); padding: 14px 16px; margin-bottom: 12px; }
+.wa-progress .wa-prog-top { display: flex; justify-content: space-between;
+  align-items: baseline; margin-bottom: 8px; }
+.wa-progress .wa-prog-num { font-family: var(--font-head); font-size: 20px; color: var(--ink); }
+.wa-progress .wa-prog-pct { font-weight: 800; color: var(--rose-deep); }
+.wa-progress .wa-bar { height: 10px; border-radius: 99px; background: rgba(242,77,140,.12); overflow: hidden; }
+.wa-progress .wa-bar > i { display: block; height: 100%; background: var(--grad-rose);
+  border-radius: 99px; transition: width .5s ease; }
+
+.wa-badges { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 2px 16px; }
+.wa-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
+  font-weight: 700; padding: 6px 10px; border-radius: 99px;
+  background: var(--glass-strong); border: 1px solid var(--line); color: var(--ink-soft); }
+.wa-badge.earned { color: var(--ink); border-color: rgba(242,77,140,.4);
+  box-shadow: var(--sh-sm); animation: wa-pop .4s ease both; }
+.wa-badge.locked { opacity: .5; }
+
+/* ---- Calendar grid ---- */
+.wa-grid-wrap { position: relative; }
+.wa-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.wa-tile {
+  position: relative; aspect-ratio: 1 / 1; border-radius: 18px;
+  border: 1px solid var(--line); background: var(--glass-bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; cursor: default; -webkit-tap-highlight-color: transparent;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.wa-tile .wa-num { font-family: var(--font-head); font-size: 18px; color: var(--ink); line-height: 1; }
+.wa-tile .wa-sticker { font-size: 15px; line-height: 1; }
+.wa-tile .wa-state-ic { position: absolute; top: 6px; right: 7px; font-size: 11px; }
+
+/* Locked — clearly not available, NOT only by color (lock glyph + dimmed) */
+.wa-tile.locked { opacity: .55; }
+.wa-tile.locked .wa-num { color: var(--ink-soft); }
+.wa-tile.locked .wa-state-ic::after { content: "🔒"; }
+
+/* Available — tappable, subtle invitation */
+.wa-tile.available { cursor: pointer; background: var(--white); box-shadow: var(--sh-sm); }
+.wa-tile.available:hover,
+.wa-tile.available:focus-visible { transform: translateY(-2px); box-shadow: var(--sh-md); outline: none; }
+.wa-tile.available .wa-sticker { animation: wa-twinkle 2.6s ease-in-out infinite; }
+
+/* Today — the current unlocked day, gently highlighted with a ring */
+.wa-tile.today { border: 2px solid var(--rose-deep); box-shadow: 0 0 0 4px rgba(242,77,140,.10); }
+.wa-tile.today .wa-state-ic::after { content: "✨"; }
+
+/* Completed — distinct from available, with a check + accent ring */
+.wa-tile.completed { background: linear-gradient(135deg, rgba(127,227,218,.28), rgba(255,255,255,.9));
+  border-color: rgba(43,181,201,.35); cursor: pointer; }
+.wa-tile.completed .wa-state-ic::after { content: "✔"; color: var(--aqua-deep); font-weight: 900; }
+.wa-tile.completed.just-done { animation: wa-pop .45s cubic-bezier(.2,1.4,.4,1) both; }
+
+/* Day 30 — the finale tile spans wider + festive */
+.wa-tile.finale { grid-column: span 5; aspect-ratio: auto; padding: 16px;
+  flex-direction: row; justify-content: flex-start; gap: 12px;
+  background: linear-gradient(135deg, rgba(255,215,231,.9), rgba(127,227,218,.25)); }
+.wa-tile.finale .wa-num { font-size: 22px; }
+.wa-tile.finale .wa-finale-copy { text-align: left; }
+.wa-tile.finale .wa-finale-copy b { color: var(--ink); }
+.wa-tile.finale .wa-finale-copy small { color: var(--ink-soft); display: block; }
+.wa-tile.finale .wa-sticker { font-size: 30px; margin-left: auto; }
+
+/* ---- Challenge bottom sheet ---- */
+.wa-sheet { position: relative; width: 100%; max-width: var(--app-w);
+  margin-top: auto; border-radius: var(--r-xl) var(--r-xl) 0 0; padding: 22px 20px 26px;
+  animation: wa-sheet-up .32s cubic-bezier(.2,.8,.2,1) both; }
+#waChallengeModal { align-items: flex-end; }
+.wa-sheet-close { position: absolute; top: 12px; right: 14px; background: none; border: 0;
+  font-size: 26px; line-height: 1; color: var(--ink-soft); cursor: pointer; }
+.wa-sheet-sticker { font-size: 40px; }
+.wa-sheet h3 { font-family: var(--font-head); font-size: 22px; margin: 4px 0 8px; color: var(--ink); }
+.wa-ch-desc { color: var(--ink); margin: 0 0 8px; }
+.wa-ch-purpose { font-size: 13px; margin: 0 0 18px; }
+.wa-ch-actions { display: flex; flex-direction: column; gap: 8px; }
+.wa-ch-done { margin: 12px 0 0; text-align: center; color: var(--aqua-deep); font-weight: 700;
+  animation: wa-pop .4s ease both; }
+
+/* ---- Confetti (reward unlock) ---- */
+.wa-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.wa-confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px;
+  animation: wa-fall 1.6s linear forwards; }
+
+/* ---- Desktop: wider grid, roomier tiles ---- */
+@media (min-width: 720px) {
+  .wa-grid { grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .wa-tile.finale { grid-column: span 6; }
+  .wa-tile .wa-num { font-size: 20px; }
+}
+
+/* ---- Motion ---- */
+@keyframes wa-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes wa-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes wa-twinkle { 0%,100% { opacity: .9; transform: scale(1); } 50% { opacity: .5; transform: scale(.92); } }
+@keyframes wa-pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes wa-sheet-up { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+@keyframes wa-fall { to { transform: translateY(102vh) rotate(360deg); opacity: .9; } }
+
+/* ---- Reduced motion: kill all seasonal animation (snow handled in JS too) ---- */
+@media (prefers-reduced-motion: reduce) {
+  .wa-card, .wa-badge.earned, .wa-tile, .wa-tile.available .wa-sticker,
+  .wa-card .wa-deco, .wa-sheet, .wa-ch-done, .wa-confetti i, .wa-tile.just-done {
+    animation: none !important; transition: none !important;
+  }
+  #snowRoot { display: none !important; }
+}

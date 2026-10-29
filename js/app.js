@@ -61,6 +61,18 @@
       route();
       updateVerifyBanner();
       await handleAuthLinks();
+      // Winter Arc seasonal layer — additive, fully gated by its own flag and by
+      // the premium /api/winterarc endpoint. Hands it a small bridge rather than
+      // exposing app internals. Safe no-op when the script or user isn't present.
+      try {
+        if (window.CaloriaWinter && token && user) {
+          window.CaloriaWinter.boot({
+            api: api, toast: toast, showView: showView,
+            getUser: function () { return user; },
+            flags: (cfg && cfg.winter_arc) || {},
+          });
+        }
+      } catch (_) {}
     } catch (err) {
       console.error("Caloria boot failed:", err);
       revealLanding();
@@ -184,6 +196,7 @@
   // YEARLY_PRICE_USD — the same value Stripe's Price is minted from). Never a
   // hardcoded pixel constant.
   function planValue(interval) {
+    if (interval === "starter") return cfg.starter_price_usd || 11.99;
     return interval === "yearly" ? (cfg.price_yearly_usd || 99) : (cfg.price_monthly_usd || 19);
   }
   // Fire the Meta 'Purchase' event — ONLY from a confirmed, paid activation.
@@ -240,8 +253,19 @@
     if (name === "account") renderAccount();
     if (name === "workout") { refreshWorkoutGate(); loadWorkout(); }
     if (name === "coach") openCoach();
+    if (name === "scan") openScan();
     if (name === "club") loadClub();
     if (name !== "scan") stopCamera();
+  }
+
+  // AI Meal Scan is Premium-only. Starter members have app access but no AI, so
+  // show the upgrade gate instead of the camera (the backend also rejects the
+  // /api/analyze call, so this is UX; it never enables an AI request for Starter).
+  function openScan() {
+    if (user && !user.has_ai) { stopCamera(); scanStage("locked"); return; }
+    // AI member: clear a stale lock (e.g. just upgraded) without disturbing an
+    // in-progress capture/result from earlier in the session.
+    if (sLocked && !sLocked.classList.contains("hidden")) scanStage("capture");
   }
 
   /* ===================== landing ===================== */
@@ -289,6 +313,32 @@
     $("#paywallNote") && ($("#paywallNote").textContent = "Cancel anytime.");
     $("#ubTitle") && ($("#ubTitle").textContent = "Join the Supermodel Wellness Club");
     $("#checkoutBtn") && ($("#checkoutBtn").textContent = "Join The Club");
+    applyStarterOffer();
+  }
+
+  // Caloria Starter ($11.99) — a one-month, no-AI entry plan shown ONLY to brand-new
+  // members who have never subscribed. Web only (native uses Apple/Google IAP). The
+  // backend independently enforces eligibility, so this is purely presentational.
+  let _starterWired = false;
+  function applyStarterOffer() {
+    const native = !!(window.CaloriaNative && window.CaloriaNative.isNative);
+    const enabled = !!(cfg && cfg.starter_enabled && !native);
+    const price = (cfg && cfg.starter_price) || "$11.99";
+    // Homepage pricing card — informational, shown to every visitor when Starter is live.
+    const home = $("#homeStarterPlan");
+    if (home) { home.classList.toggle("hidden", !enabled); const ha = $("#homeStarterAmt"); if (ha) ha.textContent = price; }
+    // In-app gate/paywall offer — only brand-new, never-subscribed members (web only).
+    const eligible = !!(enabled && user && user.starter_eligible);
+    [["#sgStarterWrap", "#sgStarterPrice"], ["#pwStarterWrap", "#pwStarterPrice"]].forEach(([wrap, pr]) => {
+      const w = $(wrap); if (!w) return;
+      w.classList.toggle("hidden", !eligible);
+      const p = $(pr); if (p) p.textContent = price;
+    });
+    if (_starterWired) return;
+    _starterWired = true;
+    const sg = $("#sgStarter"), pw = $("#pwStarter");
+    if (sg) sg.addEventListener("click", (e) => startCheckout(e.currentTarget, "starter"));
+    if (pw) pw.addEventListener("click", (e) => startCheckout(e.currentTarget, "starter"));
   }
 
   // Currency is handled entirely by Stripe Adaptive Pricing at checkout — no
@@ -576,6 +626,23 @@
     } finally { $("#resetSubmit").disabled = false; }
   });
 
+  // Live countdown for a throttled resend (driven by the backend's Retry-After).
+  // Keeps the button disabled and ticks the message down once per second,
+  // restoring "Resend" exactly when the cooldown hits zero.
+  function runResendCooldown(retryAfter) {
+    const btn = $("#resetResendBtn"); const msg = $("#resetResendMsg");
+    btn.disabled = true;
+    let secs = Math.min(Math.max(parseInt(retryAfter, 10) || 60, 1), 60);
+    const render = () => { msg.textContent = `Please wait ${secs} second${secs === 1 ? "" : "s"} before requesting another code.`; };
+    render();
+    const timer = setInterval(() => {
+      secs -= 1;
+      if (secs <= 0) { clearInterval(timer); btn.disabled = false; msg.textContent = ""; }
+      else render();
+    }, 1000);
+    return timer;
+  }
+
   $("#resetResendBtn").addEventListener("click", async () => {
     const btn = $("#resetResendBtn"); btn.disabled = true;
     const r = await requestReset(resetEmailAddr);
@@ -583,11 +650,8 @@
       $("#resetResendMsg").textContent = "New code sent 💌";
       setTimeout(() => { btn.disabled = false; $("#resetResendMsg").textContent = ""; }, 8000);
     } else {
-      // Backend throttled this resend — show the real cooldown and keep the
-      // button disabled until it elapses, instead of a misleading "sent".
-      $("#resetResendMsg").textContent = r.message;
-      setTimeout(() => { btn.disabled = false; $("#resetResendMsg").textContent = ""; },
-                 Math.min(Math.max(r.retryAfter, 1), 60) * 1000);
+      // Backend throttled this resend — live countdown, button stays disabled.
+      runResendCooldown(r.retryAfter);
     }
   });
 
@@ -1414,8 +1478,9 @@
   cameraInput.addEventListener("change", (e) => { handlePickedFile(e.target.files && e.target.files[0]); e.target.value = ""; });
   galleryInput.addEventListener("change", (e) => { handlePickedFile(e.target.files && e.target.files[0]); e.target.value = ""; });
 
-  const sCapture = $("#scanCapture"), sLoading = $("#scanLoading"), sResult = $("#scanResult"), sError = $("#scanError");
+  const sCapture = $("#scanCapture"), sLoading = $("#scanLoading"), sResult = $("#scanResult"), sError = $("#scanError"), sLocked = $("#scanLocked");
   function scanStage(which) {
+    if (sLocked) sLocked.classList.toggle("hidden", which !== "locked");
     sCapture.classList.toggle("hidden", which !== "capture");
     sLoading.classList.toggle("hidden", which !== "loading");
     sResult.classList.toggle("hidden", which !== "result");
@@ -1431,6 +1496,7 @@
     try {
       const data = await api("/api/analyze", { method: "POST", body: { image: dataUrl } });
       clearInterval(cyc);
+      try { window.dispatchEvent(new Event("caloria:winter-sync")); } catch (_) {}  // auto-complete a Winter Arc scan task
       if (typeof data.scans_used === "number" && user) user.scans_used = data.scans_used;
       if (!data.ingredients || !data.ingredients.length) return scanError("No food detected. Try a clearer, well-lit photo.");
       renderResult(data, dataUrl);
@@ -1450,6 +1516,9 @@
   }
   $("#errorRetryBtn").addEventListener("click", () => scanStage("capture"));
   $("#errorUpgradeBtn").addEventListener("click", () => openPaywall("Subscribe to unlock AI food scanning."));
+  // AI-lock upgrade CTAs (Scan + Coach) open the existing Caloria Club checkout.
+  $("#scanUpgradeBtn") && $("#scanUpgradeBtn").addEventListener("click", () => openPaywall("AI Meal Scan is part of Caloria Premium."));
+  $("#coachUpgradeBtn") && $("#coachUpgradeBtn").addEventListener("click", () => openPaywall("AI Coach is part of Caloria Premium."));
 
   function renderResult(data, dataUrl) {
     currentResult = {
@@ -1883,7 +1952,9 @@
   let coachLoaded = false;
 
   async function openCoach() {
-    const locked = user && user.plan !== "premium";
+    // AI Coach is Premium-only. Starter members have app access (plan reported as
+    // "premium" for basic gates) but no AI, so gate on has_ai, not plan.
+    const locked = user && !user.has_ai;
     $("#coachLocked").classList.toggle("hidden", !locked);
     $("#coachChat").classList.toggle("hidden", locked);
     if (locked || coachLoaded) return;
@@ -1891,47 +1962,101 @@
     try {
       const res = await api("/api/coach/history");
       ($("#chatLog").innerHTML = "");
-      if (res.messages && res.messages.length) res.messages.forEach((m) => addBubble(m.role === "user" ? "user" : "coach", m.content));
+      if (res.messages && res.messages.length) res.messages.forEach((m) => addBubble(m.role === "user" ? "user" : "coach", m.content, m.image));
       else chatEmpty();
     } catch (_) { chatEmpty(); }
   }
   function chatEmpty() {
     $("#chatLog").innerHTML = `<div class="chat-empty"><span>💬</span>Hi, I'm your Supermodel Wellness Coach! Ask me anything — nutrition, habits, training, digestion, travel wellness, or just say hi.</div>`;
   }
-  function addBubble(who, text) {
+  function addBubble(who, text, image) {
     const empty = $("#chatLog .chat-empty"); if (empty) empty.remove();
     const b = document.createElement("div");
-    b.className = "bubble " + who; b.textContent = text;
+    b.className = "bubble " + who;
+    if (text) b.textContent = text;
+    if (image) { const im = document.createElement("img"); im.className = "chat-photo"; im.src = image; im.alt = "Shared photo"; b.appendChild(im); }
     $("#chatLog").appendChild(b);
     $("#chatLog").scrollTop = $("#chatLog").scrollHeight;
     return b;
   }
 
-  $$("#chatSuggestions button").forEach((b) => b.addEventListener("click", () => sendCoach(b.dataset.suggest)));
-  $("#chatForm").addEventListener("submit", (e) => { e.preventDefault(); const v = $("#chatInput").value.trim(); if (v) sendCoach(v); });
-
-  async function sendCoach(message) {
-    $("#chatInput").value = "";
-    addBubble("user", message);
-    const typing = addBubble("coach typing", "Coach is typing…");
+  // ---- photo attachment (client-side resize to 768px + JPEG, strips EXIF) ----
+  let coachPendingImage = null;
+  const COACH_MAX_UPLOAD_MB = 10;
+  function compressCoachImage(file) {
+    return new Promise((resolve, reject) => {
+      if (!/^image\/(jpe?g|png|webp)$/i.test(file.type)) return reject(new Error("Please choose a JPEG, PNG or WebP image."));
+      if (file.size > COACH_MAX_UPLOAD_MB * 1024 * 1024) return reject(new Error("That image is too large (max " + COACH_MAX_UPLOAD_MB + " MB)."));
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const max = 768;
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (Math.max(w, h) > max) { const s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+        const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.72));   // re-encoded, metadata dropped
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("That image couldn't be read.")); };
+      img.src = url;
+    });
+  }
+  function clearCoachImage() {
+    coachPendingImage = null;
+    $("#chatImgPreview").classList.add("hidden");
+    $("#chatImgThumb").src = "";
+    $("#chatImgInput").value = "";
+  }
+  $("#chatAttach").addEventListener("click", () => $("#chatImgInput").click());
+  $("#chatImgInput").addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0]; if (!file) return;
     try {
-      const res = await api("/api/coach", { method: "POST", body: { message } });
+      coachPendingImage = await compressCoachImage(file);
+      $("#chatImgThumb").src = coachPendingImage;
+      $("#chatImgPreview").classList.remove("hidden");
+    } catch (err) { clearCoachImage(); toast(err.message || "Couldn't use that image."); }
+  });
+  $("#chatImgRemove").addEventListener("click", clearCoachImage);
+
+  $$("#chatSuggestions button").forEach((b) => b.addEventListener("click", () => sendCoach(b.dataset.suggest)));
+  $("#chatForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = $("#chatInput").value.trim();
+    if (v || coachPendingImage) sendCoach(v, coachPendingImage);
+  });
+
+  let coachSending = false;
+  async function sendCoach(message, image) {
+    if (coachSending) return;            // prevent duplicate sends / double AI calls
+    coachSending = true;
+    $("#chatInput").value = "";
+    const sentImage = image || null;
+    clearCoachImage();
+    addBubble("user", message, sentImage);
+    const typing = addBubble("coach typing", sentImage ? "Coach is looking at your photo…" : "Coach is typing…");
+    try {
+      const body = { message };
+      if (sentImage) body.image = sentImage;
+      const res = await api("/api/coach", { method: "POST", body });
       typing.remove();
       addBubble("coach", res.reply);
+      try { window.dispatchEvent(new Event("caloria:winter-sync")); } catch (_) {}  // auto-complete a Winter Arc coach task
     } catch (err) {
       typing.remove();
-      if (err.status === 402) { addBubble("coach", "💗 AI Coach Chat is a Premium feature."); openPaywall("AI Coach Chat is a Premium feature."); }
+      if (err.status === 402) { addBubble("coach", "💗 " + (err.message || "AI Coach Chat is part of Caloria Premium.")); openPaywall(err.message || "AI Coach Chat is part of Caloria Premium ($19.99/mo)."); }
       else if (err.status === 403 && err.data && err.data.needs_verification) { updateVerifyBanner(); addBubble("coach", err.message); }
+      else if (err.status === 400) addBubble("coach", "⚠️ " + (err.message || "That image couldn't be used. Please try another."));
       else if (err.status === 503) addBubble("coach", err.message || "This feature is temporarily unavailable. Please try again shortly.");
       else addBubble("coach", "⚠️ " + (err.message || "Something went wrong."));
-    }
+    } finally { coachSending = false; }
   }
 
   /* ===================== account / billing ===================== */
   function renderAccount() {
     if (!user) return;
     $("#acctEmail").textContent = user.email;
-    $("#acctPlan").textContent = user.plan === "premium" ? "Premium ✨" : "None";
+    $("#acctPlan").textContent = user.tier === "premium" ? "Premium ✨" : user.tier === "starter" ? "Starter" : "None";
     const fr = $("#acctFounderRow");
     if (fr) fr.classList.toggle("hidden", !user.founding_member);
     $("#acctScans").textContent = user.scans_used;
@@ -1963,9 +2088,11 @@
   // (landing, gate, paywall). Combined with per-button disabling and the backend's
   // session reuse, one user action can only ever create one Checkout Session.
   let checkoutInFlight = false;
-  async function startCheckout(btn) {
+  async function startCheckout(btn, overrideInterval) {
     if (checkoutInFlight) return;
     checkoutInFlight = true;
+    // Starter is a web-only entry plan; everything else uses the chosen interval.
+    const interval = overrideInterval || billingInterval;
     if (btn) { btn.disabled = true; btn.dataset.prev = btn.textContent; btn.textContent = "Opening secure checkout…"; }
     const note = $("#sgNote"); if (note) note.classList.remove("checkout-error");
     const reenable = () => { checkoutInFlight = false; if (btn) { btn.disabled = false; if (btn.dataset.prev) btn.textContent = btn.dataset.prev; } };
@@ -2005,13 +2132,13 @@
     // above never reaches here). Persist the chosen plan so the Purchase event,
     // fired after the Stripe redirect reloads the page, reports the exact value.
     try {
-      const _v = planValue(billingInterval);
-      localStorage.setItem("caloria.pendingCheckout", JSON.stringify({ interval: billingInterval, value: _v, currency: "USD" }));
-      if (window.CaloriaPixel) CaloriaPixel.initiateCheckout(billingInterval, _v, "USD");
+      const _v = planValue(interval);
+      localStorage.setItem("caloria.pendingCheckout", JSON.stringify({ interval: interval, value: _v, currency: "USD" }));
+      if (window.CaloriaPixel) CaloriaPixel.initiateCheckout(interval, _v, "USD");
     } catch (_) {}
 
     try {
-      const res = await api("/api/billing/checkout", { method: "POST", body: { interval: billingInterval } });
+      const res = await api("/api/billing/checkout", { method: "POST", body: { interval } });
       // On success we navigate away — deliberately leave the button disabled and the
       // in-flight lock set so nothing can fire a second request during the redirect.
       if (res && res.url) { window.location.href = res.url; return; }
@@ -2058,7 +2185,9 @@
   /* ===================== paywall (conversion) ===================== */
   const paywall = $("#paywallModal");
   function openPaywall(reason) {
-    if (user && user.plan === "premium") return;
+    // Only true Premium members skip the paywall. Starter members report
+    // plan="premium" for basic access but still see the AI upsell here.
+    if (user && user.tier === "premium") return;
     $("#paywallReason").textContent = reason || "Go unlimited and get the full platform.";
     applyPricing();
     paywall.classList.add("show");

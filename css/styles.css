@@ -198,7 +198,8 @@ a { color: inherit; text-decoration: none; }
 .cur-select { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: var(--ink); background: var(--white); border: 1.5px solid var(--blush); border-radius: 100px; padding: 8px 14px; cursor: pointer; outline: none; }
 .cur-select:focus { border-color: var(--rose); }
 .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 760px; margin: 30px auto 0; }
-.plan { position: relative; border-radius: var(--r-xl); padding: 32px 28px; box-shadow: var(--sh-sm); }
+.plan { position: relative; border-radius: var(--r-xl); padding: 32px 28px; box-shadow: var(--sh-sm); display: flex; flex-direction: column; }
+.plan > .btn { margin-top: auto; }
 .plan-premium { box-shadow: var(--sh-lg); transform: scale(1.02); }
 .plan-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--grad-aqua); color: #0c5b53; font-weight: 800; font-size: 12px; padding: 5px 14px; border-radius: 100px; box-shadow: var(--sh-aqua); }
 .plan h3 { font-size: 24px; }
@@ -459,6 +460,18 @@ a { color: inherit; text-decoration: none; }
 .wo-meta { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--ink-soft); background: rgba(255,255,255,.7); padding: 4px 12px; border-radius: 100px; box-shadow: inset 0 0 0 1.5px var(--blush); }
 .wo-complete-btn { margin-top: 4px; }
 .refund-notice { font-size: 12px; line-height: 1.45; color: var(--ink-soft); background: rgba(255,255,255,.55); border-radius: 12px; padding: 10px 12px; margin: 12px 0; text-align: center; box-shadow: inset 0 0 0 1.5px var(--blush); }
+/* Caloria Starter — entry-plan offer, visually part of the pricing block */
+.starter-offer { margin-top: 14px; }
+.starter-divider { display: flex; align-items: center; gap: 10px; color: var(--ink-soft); font-size: 12px; margin: 4px 0 10px; }
+.starter-divider::before, .starter-divider::after { content: ""; flex: 1; height: 1px; background: rgba(0,0,0,.08); }
+/* Same pink gradient / pill / typography as the primary CTA, one step smaller so it
+   reads as the secondary choice. Wraps instead of overflowing on narrow screens. */
+.starter-btn { white-space: normal; line-height: 1.25; }
+.starter-btn b { font-weight: 800; }
+.starter-note { font-size: 11.5px; line-height: 1.4; margin-top: 6px; text-align: center; }
+/* Homepage Starter plan card — sits beside the Club card, lighter weight. */
+.plan-starter h3 { color: var(--ink); }
+.plan-starter .pp-per { margin-left: 2px; }
 .workout-history-block { margin-top: 22px; }
 .wh-title { font-size: 16px; margin-bottom: 10px; }
 .wh-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--glass-strong); box-shadow: var(--sh-sm); margin-bottom: 8px; }
@@ -1130,3 +1143,16 @@ a { color: inherit; text-decoration: none; }
 .cs-letter p { color: var(--ink); font-size: 16px; line-height: 1.7; margin-bottom: 4px; }
 .cs-letter-sign { margin-top: 16px; }
 .cs-letter-sign span { font-family: var(--font-head); font-style: italic; font-size: 21px; color: var(--rose-deep); }
+
+/* ---- AI Coach photo attachments (additive; matches existing chat styling) ---- */
+.chat-attach{ background:none; border:0; font-size:20px; line-height:1; padding:0 8px;
+  cursor:pointer; opacity:.75; }
+.chat-attach:hover{ opacity:1; }
+.chat-attach-preview{ position:relative; display:inline-block; margin:0 0 8px 2px; }
+.chat-attach-preview img{ max-height:84px; max-width:120px; border-radius:12px;
+  box-shadow:0 6px 18px rgba(242,77,140,.16); display:block; }
+#chatImgRemove{ position:absolute; top:-8px; right:-8px; width:22px; height:22px;
+  border-radius:50%; border:0; background:#3a2937; color:#fff; font-size:15px;
+  line-height:20px; cursor:pointer; }
+.chat-msg img.chat-photo, .chat-log img.chat-photo{ max-width:200px; max-height:200px;
+  border-radius:14px; display:block; margin:6px 0 0; }
