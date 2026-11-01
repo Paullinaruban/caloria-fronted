@@ -871,6 +871,7 @@
     $("#obBack").style.visibility = obIndex === 0 ? "hidden" : "visible";
     const next = $("#obNext");
     next.textContent = "Continue";
+    next.classList.remove("hidden");
     const host = $("#obStep");
 
     if (s.type === "confirm") {
@@ -988,7 +989,9 @@
           <div><b>${t.fat || "—"}g</b><span>Fat</span></div>
         </div>
       </div>
-      <p class="ob-unlock-head">Unlock everything the moment you join 👇</p>
+      <button type="button" id="obJoinBtn" class="btn btn-glow btn-block btn-lg ob-join-cta">Join Caloria Club 💗</button>
+      <p class="ob-join-note">Cancel anytime.</p>
+      <p class="ob-unlock-head">Everything you unlock when you join 👇</p>
       <div class="ob-unlock">
         ${unlocks.map(([e, title, sub]) => `
           <div class="ob-unlock-item">
@@ -1113,7 +1116,7 @@
     $("#obStepBadge").textContent = "Almost there ✨";
     $("#obBar").style.width = "100%";
     $("#obBack").style.visibility = "visible";
-    const next = $("#obNext"); next.textContent = "Continue";
+    const next = $("#obNext"); next.textContent = "Continue"; next.classList.remove("hidden");
     $("#obStep").innerHTML = `
       <h3 class="ob-title">Your personalized wellness plan is almost ready.</h3>
       <p class="ob-sub">Where should we send your personalized results?</p>
@@ -1156,7 +1159,11 @@
     $("#obBar").style.width = "100%";
     $("#obBack").style.visibility = "visible";
     $("#obStep").innerHTML = renderConversion();
-    const next = $("#obNext"); next.textContent = "Join Caloria Club 💗"; next.disabled = false;
+    // The primary CTA now lives in-content, directly under the macro card (visible
+    // without scrolling); the bottom nav button is hidden to avoid two CTAs.
+    const next = $("#obNext"); next.classList.add("hidden");
+    const join = $("#obJoinBtn");
+    if (join) join.addEventListener("click", startMembership);
   }
 
   function renderMembershipScreen() {

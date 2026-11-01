@@ -314,6 +314,10 @@ a { color: inherit; text-decoration: none; }
 .ob-email input { width: 100%; padding: 16px 18px; border-radius: var(--r-md); background: rgba(255,255,255,.8); box-shadow: inset 0 0 0 1.5px var(--blush); border: none; font-family: var(--font-body); font-size: 17px; color: var(--rose-deep); }
 .ob-email input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--rose); }
 .ob-fine { margin-top: 12px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+/* Primary results CTA — sits directly under the macro card, above the benefits */
+.ob-join-cta { margin-top: 18px; }
+.ob-join-note { margin-top: 8px; text-align: center; color: var(--ink-soft); font-size: 12px; }
+.ob-unlock-head { margin-top: 22px; }
 .ob-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .ob-options.ob-multi .ob-opt.sel::after { content: "✓"; position: absolute; top: 8px; right: 10px; font-size: 13px; font-weight: 800; color: var(--rose); }
 .ob-options.ob-multi .ob-opt { position: relative; }
