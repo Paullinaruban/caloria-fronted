@@ -418,6 +418,15 @@
       "expired-callback": () => { captchaToken = ""; },
     });
   }
+  // Turnstile tokens are SINGLE-USE: once a token is submitted (and verified by
+  // the backend) it can't be reused. After every auth attempt we reset the
+  // widget so a retry — wrong password, taken email, a 429 — gets a fresh token
+  // instead of resubmitting a spent one (which the backend would reject).
+  function resetCaptcha() {
+    if (!turnstileReady() || !window.turnstile || captchaWidgetId === null) return;
+    try { window.turnstile.reset(captchaWidgetId); } catch (_) {}
+    captchaToken = "";
+  }
   function closeAuth() { modal.classList.remove("show"); }
 
   // NEW ORDER: "Join the Club" (signup) for a signed-out visitor now starts the
@@ -679,6 +688,15 @@
     const name = $("#authName").value.trim();
     const errEl = $("#authError");
     errEl.classList.add("hidden");
+    // When Turnstile is enabled, require a solved token before calling the API —
+    // a clearer client-side message than the backend's "Bot check failed", and it
+    // avoids spending a request on an unsolved/empty token. No-op when Turnstile
+    // isn't configured (turnstileReady() false), so existing behavior is unchanged.
+    if (turnstileReady() && !captchaToken) {
+      errEl.textContent = "Please complete the verification below, then try again.";
+      errEl.classList.remove("hidden");
+      return;
+    }
     $("#authSubmit").disabled = true;
     try {
       const path = authMode === "signup" ? "/api/auth/signup" : "/api/auth/login";
@@ -706,6 +724,7 @@
       errEl.textContent = err.message; errEl.classList.remove("hidden");
     } finally {
       $("#authSubmit").disabled = false;
+      resetCaptcha();   // single-use token spent — refresh the widget for any retry
     }
   });
 
@@ -721,25 +740,20 @@
 
   /* ===================== onboarding wizard (premium, multi-step) ===================== */
   const NOW_YEAR = new Date().getFullYear();
+  // 7-question assessment (Phase 1b). Keys/values map to the EXISTING
+  // nutrition_engine so calorie/macro/coach/workout math is unchanged:
+  //   goal  -> fat_loss | muscle_gain | maintenance (engine's 3 values)
+  //   diet  -> multi-select; stored as diet_prefs[] + legacy diet_pref (first)
+  // Removed from the funnel (defaulted in buildProfile): physique, experience,
+  // struggle, confidence, lifestyle.
   const OB_STEPS = [
-    { key: "age_confirmed", type: "confirm", title: "Before we begin", sub: "Caloria is for ages 16 and over.",
+    { key: "age_confirmed", type: "confirm", title: "First, let's make sure Caloria is right for you.",
+      sub: "Caloria is designed for ages 16 and over.",
       checkLabel: "I confirm that I am at least 16 years old." },
-    { key: "height", type: "number", title: "How tall are you?", sub: "We calibrate every plan to your body.", unit: "cm", min: 120, max: 210, def: 166 },
-    { key: "weight", type: "number", title: "What's your current weight?", sub: "Used to set your calorie & macro targets.", unit: "kg", min: 35, max: 160, def: 60 },
-    { key: "birth_year", type: "number", title: "What's your year of birth?", sub: "We use this to calculate your age.", unit: "", min: NOW_YEAR - 90, max: NOW_YEAR - 16, def: NOW_YEAR - 22 },
-    { key: "goal", type: "single", title: "What's your main goal?", options: [
-      { v: "fat_loss", label: "Fat loss", emoji: "🔥", sub: "Lean & defined" },
-      { v: "fat_loss", label: "Model body", emoji: "👠", sub: "Supermodel-lean" },
-      { v: "muscle_gain", label: "Muscle toning", emoji: "💪", sub: "Sculpt & shape" },
-      { v: "fat_loss", label: "Lean physique", emoji: "✨", sub: "Low body fat" },
-      { v: "maintenance", label: "Maintenance", emoji: "⚖️", sub: "Stay & glow" },
-    ] },
-    { key: "physique", type: "single", title: "Your dream physique", sub: "The aesthetic we'll build toward.", options: [
-      { v: "Supermodel Lean", label: "Supermodel Lean", emoji: "👠" },
-      { v: "Maintain and glow", label: "Maintain and glow", emoji: "💎" },
-      { v: "Toned & Feminine", label: "Toned & Feminine", emoji: "🌸" },
-      { v: "Athletic Glow-Up", label: "Athletic Glow-Up", emoji: "⚡" },
-    ] },
+    { key: "birth_year", type: "year", title: "What's your year of birth?",
+      sub: "We use this to calculate your age — nothing else." },
+    { key: "body", type: "body", title: "Let's get to know your body.",
+      sub: "We calibrate your calorie & macro targets to you." },
     { key: "activity", type: "single", title: "How active are you?", options: [
       { v: "sedentary", label: "Rarely active", emoji: "🛋️" },
       { v: "light", label: "Lightly active", emoji: "🚶‍♀️" },
@@ -747,47 +761,38 @@
       { v: "active", label: "Very active", emoji: "🔥" },
       { v: "athlete", label: "Athlete", emoji: "🏅" },
     ] },
-    { key: "experience", type: "single", title: "Your training experience", options: [
-      { v: "beginner", label: "Beginner", emoji: "🌱" },
-      { v: "intermediate", label: "Intermediate", emoji: "💪" },
-      { v: "advanced", label: "Advanced", emoji: "🏆" },
+    { key: "goal", type: "single", title: "What's your main goal?", options: [
+      { v: "fat_loss", label: "Lose Weight", emoji: "🔥", sub: "Lean down & tone" },
+      { v: "fat_loss", label: "Supermodel Lean Body", emoji: "👠", sub: "Low body fat & defined" },
+      { v: "maintenance", label: "Maintain Weight", emoji: "⚖️", sub: "Stay & glow" },
+      { v: "muscle_gain", label: "Build Muscle", emoji: "💪", sub: "Sculpt & strengthen" },
+      { v: "muscle_gain", label: "Gain Weight", emoji: "🌱", sub: "Add healthy weight" },
     ] },
-    { key: "struggle", type: "single", title: "Your biggest struggle?", sub: "We'll coach you through it.", options: [
-      { v: "consistency", label: "Consistency", emoji: "📆" },
-      { v: "overeating", label: "Overeating", emoji: "🍽️" },
-      { v: "motivation", label: "Motivation", emoji: "✨" },
-      { v: "cravings", label: "Cravings", emoji: "🍫" },
-      { v: "time", label: "Time management", emoji: "⏳" },
-    ] },
-    { key: "diet_pref", type: "single", title: "Dietary preference", options: [
-      { v: "none", label: "No preference", emoji: "🍽️" },
+    { key: "diet", type: "multi", min: 1, title: "How would you describe your diet?",
+      sub: "Select all that apply.", options: [
+      { v: "none", label: "No Preference", emoji: "🍽️", excl: true },
       { v: "vegetarian", label: "Vegetarian", emoji: "🥗" },
       { v: "vegan", label: "Vegan", emoji: "🌿" },
       { v: "pescatarian", label: "Pescatarian", emoji: "🐟" },
+      { v: "non_vegetarian", label: "Non-vegetarian", emoji: "🍗" },
       { v: "high_protein", label: "High-protein", emoji: "🥩" },
+      { v: "south_asian", label: "South Asian", emoji: "🍛" },
+      { v: "mediterranean", label: "Mediterranean", emoji: "🫒" },
+      { v: "dairy_free", label: "Dairy-free", emoji: "🥛" },
+      { v: "keto", label: "Keto", emoji: "🥑" },
+      { v: "gluten_free", label: "Gluten-free", emoji: "🌾" },
     ] },
-    { key: "allergies", type: "multi", title: "Any food allergies?", sub: "We'll keep these out of your meals.", options: [
+    { key: "allergies", type: "multi", min: 1, title: "Any food allergies or ingredients you avoid?",
+      sub: "Select all that apply, or choose None.", options: [
       { v: "dairy", label: "Dairy" }, { v: "gluten", label: "Gluten" }, { v: "nuts", label: "Nuts" },
       { v: "egg", label: "Eggs" }, { v: "soy", label: "Soy" }, { v: "fish", label: "Fish" },
-      { v: "shellfish", label: "Shellfish" }, { v: "__none", label: "None 🙂" },
+      { v: "shellfish", label: "Shellfish" }, { v: "__none", label: "None 🙂", excl: true },
     ] },
-    { key: "confidence", type: "single", title: "How confident do you feel right now?", options: [
-      { v: "low", label: "Just starting", emoji: "🌱" },
-      { v: "building", label: "Building it", emoji: "📈" },
-      { v: "confident", label: "Confident", emoji: "👑" },
-    ] },
-    { key: "lifestyle", type: "single", title: "Which best describes your lifestyle?", options: [
-      { v: "busy", label: "Busy professional", emoji: "💼" },
-      { v: "student", label: "Student", emoji: "🎓" },
-      { v: "parent", label: "Parent", emoji: "👶" },
-      { v: "flexible", label: "Flexible schedule", emoji: "🌤️" },
-    ] },
-    { key: "__preview", type: "preview", title: "Your plan is ready ✨" },
   ];
-  // The final step is the conversion screen (results + what unlocks). Its CTA
-  // checks Premium: members enter the app, everyone else gets the subscription
-  // screen. Payment now comes AFTER onboarding, not before.
-  const OB_PREVIEW = OB_STEPS.length - 1;
+  const AGE_MIN = 16;
+  // Funnel phase AFTER the 7 questions: "email" -> "results" -> "membership".
+  let obPhase = "questions";
+  let obLeadId = null, obLeadEmail = "";
   let obIndex = 0, obAns = {}, obSubmitted = false;
   // ---- NEW ONBOARDING ORDER: questionnaire runs BEFORE account creation ----
   // Answers are kept in temp state (memory + localStorage so they survive a
@@ -795,22 +800,69 @@
   // right after sign-up + verification. The questionnaire itself is unchanged.
   let obPreviewTargets = null;             // targets computed pre-account (results screen)
   let attaching = false;                   // guards the one-time post-signup attach
-  const OB_STORE = "caloria.onboarding.answers";
-  function persistOb() { try { localStorage.setItem(OB_STORE, JSON.stringify(obAns)); } catch (_) {} }
-  function loadOb() { try { const v = JSON.parse(localStorage.getItem(OB_STORE) || "null"); if (v && typeof v === "object") obAns = v; } catch (_) {} }
-  function clearOb() { obPreviewTargets = null; try { localStorage.removeItem(OB_STORE); } catch (_) {} }
+  // v2 store keeps answers + current step + phase + lead id, so a refresh or a
+  // return later restores the whole funnel exactly where she left off.
+  const OB_STORE = "caloria.onboarding.v2";
+  function persistOb() {
+    try { localStorage.setItem(OB_STORE, JSON.stringify(
+      { ans: obAns, i: obIndex, phase: obPhase, lead: obLeadId, email: obLeadEmail })); } catch (_) {}
+  }
+  function loadOb() {
+    try {
+      const v = JSON.parse(localStorage.getItem(OB_STORE) || "null");
+      if (v && typeof v === "object" && v.ans && typeof v.ans === "object") {
+        obAns = v.ans;
+        obIndex = Math.min(Math.max(0, v.i | 0), OB_STEPS.length - 1);
+        obPhase = v.phase || "questions";
+        obLeadId = v.lead || null;
+        obLeadEmail = v.email || "";
+      }
+    } catch (_) {}
+  }
+  function clearOb() {
+    obPreviewTargets = null; obPhase = "questions"; obLeadId = null; obLeadEmail = "";
+    try { localStorage.removeItem(OB_STORE); } catch (_) {}
+  }
   function hasStoredOb() { try { return !!localStorage.getItem(OB_STORE); } catch (_) { return false; } }
-  // Anonymous "Join the Club" entry point — show the existing questionnaire first.
+
+  // ---- unit + BMI helpers (Height in cm, Weight in lbs) ----
+  const LBS_TO_KG = 0.45359237;
+  function validHeightCm(v) { return typeof v === "number" && v >= 120 && v <= 220; }
+  function validWeightLbs(v) { return typeof v === "number" && v >= 70 && v <= 400; }   // ~32–181 kg
+  function bmiFrom(cm, lbs) {
+    if (!validHeightCm(cm) || !validWeightLbs(lbs)) return null;
+    const kg = lbs * LBS_TO_KG, m = cm / 100;
+    return Math.round((kg / (m * m)) * 10) / 10;
+  }
+  function currentAge() {
+    const by = obAns.birth_year;
+    return (typeof by === "number") ? (NOW_YEAR - by) : null;
+  }
+
+  // Anonymous "Join the Club" entry point — show the 7-question assessment first.
   function startJoinFlow() {
-    loadOb();                              // preserve answers if returning
-    obIndex = 0; obSubmitted = false; obPreviewTargets = null;
+    loadOb();                              // resume answers / phase if returning
+    obSubmitted = false; obPreviewTargets = null;
     $("#site").classList.add("hidden");
     $("#app").classList.remove("hidden");
-    obRender();
+    obShow();
     showView("onboard");
   }
 
-  function obReset() { obIndex = 0; obAns = {}; obSubmitted = false; obPreviewTargets = null; obRender(); }
+  function obReset() {
+    obIndex = 0; obAns = {}; obSubmitted = false; obPreviewTargets = null;
+    obPhase = "questions"; obLeadId = null; obLeadEmail = "";
+    obShow();
+  }
+
+  // Master dispatcher: the single #obStep host shows either a question or one of
+  // the post-assessment screens (email -> results -> membership).
+  function obShow() {
+    if (obPhase === "email") return renderEmailCapture();
+    if (obPhase === "results") return renderResultsScreen();
+    if (obPhase === "membership") return renderMembershipScreen();
+    obRender();
+  }
 
   function obRender() {
     const s = OB_STEPS[obIndex];
@@ -818,8 +870,7 @@
     $("#obBar").style.width = ((obIndex + 1) / OB_STEPS.length * 100) + "%";
     $("#obBack").style.visibility = obIndex === 0 ? "hidden" : "visible";
     const next = $("#obNext");
-    next.textContent = s.type === "preview" ? "Unlock My Plan ✨" : "Continue";
-    next.disabled = false;
+    next.textContent = "Continue";
     const host = $("#obStep");
 
     if (s.type === "confirm") {
@@ -829,24 +880,71 @@
         <p class="ob-validation hidden" id="obValidation">Please confirm to continue.</p>`;
       $("#obConfirm").addEventListener("change", (e) => {
         obAns[s.key] = e.target.checked;
-        if (e.target.checked) { obAns.age_confirmed_at = new Date().toISOString(); $("#obValidation").classList.add("hidden"); }
-        updateObNextState();
+        if (e.target.checked) obAns.age_confirmed_at = new Date().toISOString();
+        $("#obValidation").classList.toggle("hidden", e.target.checked);
+        persistOb(); updateObNextState();
       });
-      updateObNextState();
-    } else if (s.type === "number") {
+    } else if (s.type === "year") {
+      const years = [];
+      for (let y = NOW_YEAR - AGE_MIN; y >= NOW_YEAR - 90; y--) years.push(y);
+      const cur = obAns.birth_year;
       host.innerHTML = `<h3 class="ob-title">${s.title}</h3>${s.sub ? `<p class="ob-sub">${s.sub}</p>` : ""}
-        <div class="ob-number"><input id="obInput" type="number" min="${s.min}" max="${s.max}" value="${obAns[s.key] != null ? obAns[s.key] : s.def}"/><span>${s.unit}</span></div>`;
+        <div class="ob-year">
+          <select id="obYear" aria-label="Year of birth">
+            <option value="" ${cur == null ? "selected" : ""} disabled>Select your year</option>
+            ${years.map((y) => `<option value="${y}" ${cur === y ? "selected" : ""}>${y}</option>`).join("")}
+          </select>
+        </div>
+        <p class="ob-validation hidden" id="obValidation">You must be at least ${AGE_MIN} to use Caloria.</p>`;
+      $("#obYear").addEventListener("change", (e) => {
+        const y = parseInt(e.target.value, 10);
+        obAns.birth_year = isNaN(y) ? null : y;
+        const ok = currentAge() != null && currentAge() >= AGE_MIN;
+        $("#obValidation").classList.toggle("hidden", ok);
+        persistOb(); updateObNextState();
+      });
+    } else if (s.type === "body") {
+      const cm = obAns.height, lbs = obAns.weight_lbs;
+      host.innerHTML = `<h3 class="ob-title">${s.title}</h3>${s.sub ? `<p class="ob-sub">${s.sub}</p>` : ""}
+        <div class="ob-body">
+          <label class="ob-field"><span>Height</span>
+            <div class="ob-ipair"><input id="obHeight" type="number" inputmode="decimal" min="120" max="220" step="0.1" placeholder="e.g. 166" value="${cm != null ? cm : ""}"/><em>cm</em></div></label>
+          <label class="ob-field"><span>Weight</span>
+            <div class="ob-ipair"><input id="obWeight" type="number" inputmode="decimal" min="70" max="400" step="0.1" placeholder="e.g. 140" value="${lbs != null ? lbs : ""}"/><em>lbs</em></div></label>
+        </div>
+        <div class="ob-bmi hidden" id="obBmi"></div>
+        <p class="ob-validation hidden" id="obValidation">Please enter a valid height (cm) and weight (lbs).</p>`;
+      const onBody = () => {
+        const h = parseFloat($("#obHeight").value), w = parseFloat($("#obWeight").value);
+        obAns.height = isNaN(h) ? null : h;            // cm — stored as the engine expects
+        obAns.weight_lbs = isNaN(w) ? null : w;        // lbs — converted to kg in buildProfile
+        const bmi = bmiFrom(obAns.height, obAns.weight_lbs);
+        const bmiEl = $("#obBmi");
+        if (bmi != null) {
+          const age = currentAge();
+          const note = (age != null && age < 18)
+            ? "A guide for your age — not a medical assessment."
+            : "For information only — not a medical diagnosis.";
+          bmiEl.innerHTML = `<div class="ob-bmi-val">Your Body Mass Index (BMI): <b>${bmi.toFixed(1)}</b></div><small>${note}</small>`;
+          bmiEl.classList.remove("hidden");
+        } else {
+          bmiEl.classList.add("hidden");
+        }
+        persistOb(); updateObNextState();
+      };
+      $("#obHeight").addEventListener("input", onBody);
+      $("#obWeight").addEventListener("input", onBody);
+      onBody();
     } else if (s.type === "single" || s.type === "multi") {
       const sel = obAns[s.key];
       host.innerHTML = `<h3 class="ob-title">${s.title}</h3>${s.sub ? `<p class="ob-sub">${s.sub}</p>` : ""}
-        <div class="ob-options">` + s.options.map((o, i) => {
+        <div class="ob-options${s.type === "multi" ? " ob-multi" : ""}">` + s.options.map((o, i) => {
           const active = s.type === "multi" ? (Array.isArray(sel) && sel.includes(o.v)) : (sel === o.v && obAns[s.key + "_i"] === i);
-          return `<button class="ob-opt${active ? " sel" : ""}" data-i="${i}"><b>${o.emoji ? o.emoji + " " : ""}${o.label}</b>${o.sub ? `<small>${o.sub}</small>` : ""}</button>`;
+          return `<button type="button" class="ob-opt${active ? " sel" : ""}" data-i="${i}" aria-pressed="${active}"><b>${o.emoji ? o.emoji + " " : ""}${o.label}</b>${o.sub ? `<small>${o.sub}</small>` : ""}</button>`;
         }).join("") + `</div>`;
       $$("#obStep .ob-opt").forEach((b) => b.addEventListener("click", () => obPick(s, +b.dataset.i)));
-    } else if (s.type === "preview") {
-      host.innerHTML = renderConversion();
     }
+    updateObNextState();
   }
 
   /* ---------- conversion screen (results + what unlocks) ---------- */
@@ -864,23 +962,24 @@
 
   function renderConversion() {
     const t = (user && user.targets) || obPreviewTargets || {};
-    const physique = obAns.physique || "wellness";
+    const goalLabel = obAns.goal_label || "wellness";
     const focus = WORKOUT_FOCUS[obAns.goal] || "personalized training sessions";
-    const level = LEVEL_LABEL[obAns.experience] || "your level";
-    const diet = DIET_LABEL[obAns.diet_pref] || "balanced";
+    const level = "your";
+    const dietArr = Array.isArray(obAns.diet) ? obAns.diet.filter((x) => x !== "none") : [];
+    const diet = DIET_LABEL[dietArr[0]] || (dietArr.length ? "personalized" : "balanced");
     // Feature teasers — exciting but accurate to what the app actually delivers.
     const unlocks = [
       ["🍽️", "Your personalized meal plan", `${diet[0].toUpperCase() + diet.slice(1)} meals tuned to your calorie & macro targets.`],
       ["🤖", "Your AI Wellness Coach", "Ask anything, anytime — guidance built around your goal."],
       ["📸", "AI Meal Scan", "Snap a photo and get instant calories, protein, carbs & fats."],
-      ["🏋️", "Your workout program", `${level[0].toUpperCase() + level.slice(1)}-level ${focus}, ready to start.`],
+      ["🏋️", "Your workout program", `${focus[0].toUpperCase() + focus.slice(1)}, ready to start.`],
       ["💬", "The Caloria community", "A private circle of women on the same journey."],
       ["🏆", "Progress tracking", "See your streaks and transformation over time."],
     ];
     return `
       <span class="pill pill-aqua ob-ready">Your plan is ready ✨</span>
       <h3 class="ob-title">Your personalized wellness plan is ready</h3>
-      <p class="ob-sub">Built for your ${esc(physique)} goal — here are your daily targets.</p>
+      <p class="ob-sub">Built for your ${esc(goalLabel)} goal — here are your daily targets.</p>
       <div class="ob-preview">
         <div class="obp-cal"><b>${t.calories || "—"}</b><span>kcal / day</span></div>
         <div class="obp-macros">
@@ -900,17 +999,42 @@
       <p class="ob-sub ob-unlock-foot">You're one step away from your full transformation 💗</p>`;
   }
 
+  function validEmailSyntax(s) {
+    return typeof s === "string" && s.length <= 254 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
+  }
+  // A question/screen is "answered" when a valid answer exists. Continue is bound
+  // to this for EVERY step/phase, so a user can never advance without answering.
+  function isStepAnswered(s) {
+    if (!s) return true;
+    if (s.type === "confirm") return obAns[s.key] === true;
+    if (s.type === "year") return currentAge() != null && currentAge() >= AGE_MIN;
+    if (s.type === "body") return validHeightCm(obAns.height) && validWeightLbs(obAns.weight_lbs);
+    if (s.type === "single") return obAns[s.key] != null && obAns[s.key] !== "";
+    if (s.type === "multi") return Array.isArray(obAns[s.key]) && obAns[s.key].length >= (s.min || 1);
+    return true;
+  }
   function updateObNextState() {
-    const s = OB_STEPS[obIndex], next = $("#obNext");
-    next.disabled = !!(s && s.type === "confirm" && obAns[s.key] !== true);
+    const next = $("#obNext"); if (!next) return;
+    let ok;
+    if (obPhase === "email") { const el = $("#obEmail"); ok = !!el && validEmailSyntax(el.value.trim()); }
+    else if (obPhase === "results" || obPhase === "membership") ok = true;
+    else ok = isStepAnswered(OB_STEPS[obIndex]);
+    next.disabled = !ok;
   }
 
   function obPick(step, i) {
     const o = step.options[i];
     if (step.type === "multi") {
       let arr = Array.isArray(obAns[step.key]) ? obAns[step.key].slice() : [];
-      if (o.v === "__none") { arr = []; }
-      else { arr = arr.includes(o.v) ? arr.filter((x) => x !== o.v) : arr.concat(o.v); }
+      if (o.excl) {
+        // Exclusive option (diet "No Preference", allergies "None"): selecting it
+        // clears everything else; tapping it again clears it.
+        arr = arr.includes(o.v) ? [] : [o.v];
+      } else {
+        const exclVals = step.options.filter((x) => x.excl).map((x) => x.v);
+        arr = arr.filter((x) => !exclVals.includes(x));   // picking a real option drops the exclusive one
+        arr = arr.includes(o.v) ? arr.filter((x) => x !== o.v) : arr.concat(o.v);
+      }
       obAns[step.key] = arr;
     } else {
       obAns[step.key] = o.v; obAns[step.key + "_i"] = i; obAns[step.key + "_label"] = o.label;
@@ -919,22 +1043,37 @@
     obRender();
   }
 
-  // Build the exact same profile payload the questionnaire always produced.
+  // Build the profile payload the backend nutrition_engine expects. Units and
+  // value domains are preserved exactly (height cm, weight kg, goal is one of
+  // fat_loss|muscle_gain|maintenance), so calorie/macro/coach/workout math is
+  // unchanged. Removed questions are supplied as safe defaults.
   function buildProfile() {
+    const dietArr = Array.isArray(obAns.diet) ? obAns.diet.filter((x) => x !== "none") : [];
+    const allergyArr = Array.isArray(obAns.allergies) ? obAns.allergies.filter((x) => x !== "__none") : [];
+    // Weight is entered in LBS but the engine works in KG — convert here.
+    const weightKg = obAns.weight_lbs != null
+      ? Math.round(obAns.weight_lbs * LBS_TO_KG * 10) / 10 : 60;
     return {
       gender: "female",
-      height: obAns.height != null ? obAns.height : 166,
-      weight: obAns.weight != null ? obAns.weight : 60,
+      height: obAns.height != null ? obAns.height : 166,     // cm
+      weight: weightKg,                                      // kg (converted from lbs)
+      weight_lbs: obAns.weight_lbs != null ? obAns.weight_lbs : null,
       birth_year: obAns.birth_year != null ? obAns.birth_year : NOW_YEAR - 22,
       age_confirmed: obAns.age_confirmed === true,
       age_confirmed_at: obAns.age_confirmed_at || null,
       activity: obAns.activity || "light",
-      goal: obAns.goal || "fat_loss",
+      goal: obAns.goal || "fat_loss",                        // fat_loss | muscle_gain | maintenance
+      goal_label: obAns.goal_label || null,
+      // Dietary preference: legacy single string (first pick) + full multi array.
+      diet_pref: dietArr[0] || "none",
+      diet_prefs: dietArr,
+      // Safety-critical — persisted and passed to meal plans + AI Coach context.
+      allergies: allergyArr,
+      // Removed from the funnel → safe defaults so existing coach/workout logic
+      // (which may read these from the profile) keeps working unchanged.
       physique: obAns.physique || null,
       level: obAns.experience || "beginner",
       struggle: obAns.struggle || null,
-      diet_pref: obAns.diet_pref || "none",
-      allergies: Array.isArray(obAns.allergies) ? obAns.allergies : [],
       confidence: obAns.confidence || null,
       lifestyle: obAns.lifestyle || null,
     };
@@ -969,35 +1108,112 @@
     route();   // now has targets → subscription/payment screen
   }
 
-  $("#obBack").addEventListener("click", () => { if (obIndex > 0) { obIndex--; obRender(); } });
+  /* ---------- post-assessment screens (email → results → membership) ---------- */
+  function renderEmailCapture() {
+    $("#obStepBadge").textContent = "Almost there ✨";
+    $("#obBar").style.width = "100%";
+    $("#obBack").style.visibility = "visible";
+    const next = $("#obNext"); next.textContent = "Continue";
+    $("#obStep").innerHTML = `
+      <h3 class="ob-title">Your personalized wellness plan is almost ready.</h3>
+      <p class="ob-sub">Where should we send your personalized results?</p>
+      <div class="ob-email"><input id="obEmail" type="email" inputmode="email" autocomplete="email"
+        placeholder="you@email.com" value="${obLeadEmail ? esc(obLeadEmail) : ""}"/></div>
+      <p class="ob-validation hidden" id="obEmailErr"></p>
+      <p class="ob-fine">You'll see your results right here on Caloria — no need to check your inbox.
+        We'll never share your email.</p>`;
+    const el = $("#obEmail");
+    el.addEventListener("input", updateObNextState);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); if (!$("#obNext").disabled) submitEmailPhase(); }
+    });
+    updateObNextState();
+    setTimeout(() => { try { el.focus(); } catch (_) {} }, 50);
+  }
+  function showEmailErr(m) { const e = $("#obEmailErr"); if (e) { e.textContent = m; e.classList.remove("hidden"); } }
+
+  async function submitEmailPhase() {
+    const el = $("#obEmail"); const email = el ? el.value.trim() : "";
+    if (!validEmailSyntax(email)) { showEmailErr("Please enter a valid email address."); return; }
+    const btn = $("#obNext"); btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      // 1) persist the lead (email + assessment) so results survive a refresh and
+      //    the email is on file for later. No account, no password, no code sent.
+      const r = await api("/api/lead", { method: "POST", auth: false,
+        body: { lead_id: obLeadId, email, profile: buildProfile() } });
+      obLeadId = r.lead_id || obLeadId; obLeadEmail = r.email || email;
+      // 2) compute personalized targets (same nutrition_engine) for the results.
+      if (!obSubmitted || !obPreviewTargets) await obSubmitProfile();
+      obPhase = "results"; persistOb(); obShow();
+    } catch (err) {
+      showEmailErr(err && err.message ? err.message : "Something went wrong. Please try again.");
+      btn.disabled = false; btn.textContent = "Continue";
+    }
+  }
+
+  function renderResultsScreen() {
+    $("#obStepBadge").textContent = "Your results ✨";
+    $("#obBar").style.width = "100%";
+    $("#obBack").style.visibility = "visible";
+    $("#obStep").innerHTML = renderConversion();
+    const next = $("#obNext"); next.textContent = "Join Caloria Club 💗"; next.disabled = false;
+  }
+
+  function renderMembershipScreen() {
+    $("#obStepBadge").textContent = "Caloria Club";
+    $("#obBar").style.width = "100%";
+    $("#obBack").style.visibility = "visible";
+    $("#obStep").innerHTML = renderMembershipOffer();
+    const next = $("#obNext"); next.textContent = "Join Caloria Club 💗"; next.disabled = false;
+  }
+  function renderMembershipOffer() {
+    // Features limited to what membership actually delivers — no fake urgency.
+    const feats = [
+      ["🍽️", "Personalized nutrition & meal plans", "Built around your calorie & macro targets."],
+      ["🏋️", "Personalized workouts", "Training that matches your goal and level."],
+      ["🤖", "AI Supermodel Coach", "Ask anything, anytime — guidance built around you."],
+      ["📸", "AI Meal Scan", "Snap a photo for instant calories, protein, carbs & fats."],
+      ["🏆", "Progress tracking", "See your streaks and transformation over time."],
+      ["💬", "Private wellness community", "A circle of women on the same journey."],
+    ];
+    return `
+      <span class="pill pill-aqua ob-ready">Your transformation starts here</span>
+      <h3 class="ob-title">Join Caloria Club</h3>
+      <p class="ob-sub">Turn your personalized plan into daily progress.</p>
+      <div class="ob-unlock">
+        ${feats.map(([e, title, sub]) => `
+          <div class="ob-unlock-item"><span class="emo">${e}</span>
+            <div><b>${esc(title)}</b><small>${esc(sub)}</small></div></div>`).join("")}
+      </div>
+      <p class="ob-sub ob-unlock-foot">Choose your plan on the next step. Cancel anytime 💗</p>`;
+  }
+
+  // Phase 1b bridge: hand off to the EXISTING account + checkout flow with the
+  // captured email prefilled. (Phase 2/3 will replace this with lead-based Stripe
+  // Checkout + a 3-day trial + account-creation-after-payment.)
+  function startMembership() {
+    persistOb();
+    if (token) { route(); return; }
+    openAuth("signup");
+    const em = $("#authEmail"); if (em && obLeadEmail) em.value = obLeadEmail;
+  }
+
+  $("#obBack").addEventListener("click", () => {
+    if (obPhase === "membership") { obPhase = "results"; persistOb(); obShow(); return; }
+    if (obPhase === "results") { obPhase = "email"; persistOb(); obShow(); return; }
+    if (obPhase === "email") { obPhase = "questions"; persistOb(); obShow(); return; }
+    if (obIndex > 0) { obIndex--; persistOb(); obRender(); }
+  });
   $("#obNext").addEventListener("click", async () => {
+    if ($("#obNext").disabled) return;                 // hard gate: never advance unanswered
+    if (obPhase === "email") return submitEmailPhase();
+    if (obPhase === "results") { obPhase = "membership"; persistOb(); obShow(); return; }
+    if (obPhase === "membership") return startMembership();
+    // questions phase
     const s = OB_STEPS[obIndex];
-    if (s.type === "confirm" && obAns[s.key] !== true) {
-      const v = $("#obValidation"); if (v) v.classList.remove("hidden");
-      return;  // mandatory 16+ gate — cannot continue unconfirmed
-    }
-    if (s.type === "number") {
-      const v = +$("#obInput").value;
-      obAns[s.key] = Math.max(s.min, Math.min(s.max, v || s.def));
-      persistOb();
-    }
-    if (s.type === "preview") {
-      // NEW ORDER: if there's no account yet, create it NOW (after the
-      // questionnaire). Answers are already saved locally and get attached
-      // to the account after verification.
-      if (!token) { persistOb(); openAuth("signup"); return; }
-      // Logged in: members enter the app; everyone else sees the payment screen.
-      if (hasAccess()) { toast("Welcome to the Supermodel Wellness Club 👑"); showView("dashboard"); }
-      else { showGate(); }
-      return;
-    }
-    // submit right before showing the preview so targets are real
-    if (obIndex === OB_PREVIEW - 1 && !obSubmitted) {
-      const btn = $("#obNext"); btn.disabled = true; btn.textContent = "Building your plan…";
-      try { await obSubmitProfile(); } catch (err) { toast(err.message); btn.disabled = false; btn.textContent = "Continue"; return; }
-      btn.disabled = false;
-    }
-    if (obIndex < OB_STEPS.length - 1) { obIndex++; obRender(); }
+    if (!isStepAnswered(s)) { const v = $("#obValidation"); if (v) v.classList.remove("hidden"); return; }
+    if (obIndex < OB_STEPS.length - 1) { obIndex++; persistOb(); obRender(); }
+    else { obPhase = "email"; persistOb(); obShow(); }   // after Q7 → email capture
   });
   obReset();
 
