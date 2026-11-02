@@ -246,6 +246,10 @@ a { color: inherit; text-decoration: none; }
 .pw-toggle .pw-eye-off { display: none; }
 .pw-toggle.on .pw-eye-off { display: block; }
 .auth-error { background: #fdeaea; color: #b5403f; padding: 10px 12px; border-radius: var(--r-sm); font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.auth-recover { margin-top: 12px; }
+.auth-recover-msg { background: #fff4fa; color: var(--rose-deep); padding: 11px 13px; border-radius: var(--r-sm); font-size: 13px; font-weight: 600; line-height: 1.45; margin: 0 0 12px; }
+.auth-recover .btn { margin-bottom: 8px; }
+.auth-recover .btn:last-child { margin-bottom: 0; }
 .auth-switch { text-align: center; margin-top: 16px; font-size: 14px; color: var(--ink-soft); }
 .auth-switch button { color: var(--rose-deep); font-weight: 700; }
 

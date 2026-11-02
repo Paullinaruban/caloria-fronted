@@ -34,7 +34,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
 
   <link rel="stylesheet" href="css/fonts.css" />
-  <link rel="stylesheet" href="css/styles.css?v=49" />
+  <link rel="stylesheet" href="css/styles.css?v=50" />
   <link rel="stylesheet" href="css/winter.css?v=2" />
   <!-- Native (Capacitor) refinements — inert on the web -->
   <link rel="stylesheet" href="css/native.css?v=1" />
@@ -275,6 +275,14 @@
         <div id="authCaptcha" class="auth-captcha"></div>
         <div class="auth-error hidden" id="authError"></div>
         <button class="btn btn-primary btn-block" id="authSubmit" type="submit">Create account</button>
+        <!-- Graceful recovery when signup returns 409 (email already registered):
+             offer to log in, or resend the verification code for an unverified account.
+             Purely presentational — backend signup logic is unchanged. -->
+        <div class="auth-recover hidden" id="authRecover">
+          <p class="auth-recover-msg" id="authRecoverMsg"></p>
+          <button type="button" class="btn btn-primary btn-block" id="authRecoverLogin">Log in instead</button>
+          <button type="button" class="btn btn-ghost btn-block" id="authRecoverResend">Resend verification code</button>
+        </div>
         <p class="auth-consent hidden" id="authConsent">By creating an account you agree to our
           <a href="/terms.html" target="_blank" rel="noopener">Terms</a> and
           <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>
@@ -1112,6 +1120,6 @@
        the PUBLIC (logged-out) landing too, not just the logged-in app. -->
   <script src="js/seasonal.js?v=2"></script>
   <script src="js/winter.js?v=2"></script>
-  <script src="js/app.js?v=67"></script>
+  <script src="js/app.js?v=68"></script>
 </body>
 </html>

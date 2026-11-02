@@ -442,9 +442,56 @@
     $("#authSwitch").textContent = mode === "signup" ? "Log in" : "Sign up";
     $("#authForgotWrap").classList.toggle("hidden", mode !== "login");
     $("#authError").classList.add("hidden");
+    resetAuthRecover();
     modal.classList.add("show");
     renderCaptcha();
     setTimeout(() => $("#authEmail").focus(), 50);
+  }
+
+  /* ---------- graceful 409 recovery (email already registered) ---------- */
+  // Frontend-only: when signup reports the email is taken, we don't dead-end with
+  // a raw error. We offer to log in, or to resend the verification code (neutral —
+  // the backend only sends one if that account is genuinely unverified). The
+  // backend signup logic and duplicate-email protection are unchanged.
+  let _authRecoverWired = false;
+  function resetAuthRecover() {
+    const r = $("#authRecover"); if (r) r.classList.add("hidden");
+    const s = $("#authSubmit"); if (s) s.classList.remove("hidden");
+  }
+  function showAuthRecover(email) {
+    const r = $("#authRecover"); if (!r) return;
+    $("#authError").classList.add("hidden");
+    $("#authSubmit").classList.add("hidden");   // reduce confusion — recovery is the next step
+    $("#authRecoverMsg").textContent =
+      "An account with this email already exists. You can log in — or if you haven't " +
+      "confirmed your email yet, resend your verification code.";
+    r.classList.remove("hidden");
+    if (_authRecoverWired) return;
+    _authRecoverWired = true;
+    // If they change the email after seeing recovery, return to the normal form so
+    // a different (unused) address can be submitted directly.
+    $("#authEmail").addEventListener("input", () => {
+      if (!$("#authRecover").classList.contains("hidden")) resetAuthRecover();
+    });
+    $("#authRecoverLogin").addEventListener("click", () => {
+      const em = $("#authEmail").value.trim();
+      openAuth("login");                         // resetAuthRecover() runs inside
+      if (em) $("#authEmail").value = em;        // keep their email prefilled
+      $("#authPassword").value = "";
+      setTimeout(() => { try { $("#authPassword").focus(); } catch (_) {} }, 60);
+    });
+    $("#authRecoverResend").addEventListener("click", async () => {
+      const em = $("#authEmail").value.trim();
+      const btn = $("#authRecoverResend"); btn.disabled = true;
+      try {
+        // Neutral endpoint: sends a code ONLY if that account exists AND is unverified.
+        await api("/api/auth/resend", { method: "POST", body: { email: em }, auth: false });
+      } catch (_) { /* stay neutral — never reveal account state */ }
+      btn.disabled = false;
+      closeAuth();
+      openVerify(em);                            // let them enter the code to finish
+      toast("If that account still needs verifying, we've sent a fresh code 💌");
+    });
   }
 
   /* ---------- Cloudflare Turnstile (env-gated) ---------- */
@@ -774,7 +821,14 @@
         toast(authMode === "signup" ? "Welcome to Caloria 💗" : "Welcome back 💗");
       }
     } catch (err) {
-      errEl.textContent = err.message; errEl.classList.remove("hidden");
+      // Graceful recovery: signup on an already-registered email → offer log in /
+      // resend verification instead of a dead-end error. Login 409s don't happen
+      // (wrong creds are 401), so this only affects the signup path.
+      if (authMode === "signup" && err.status === 409) {
+        showAuthRecover(email);
+      } else {
+        errEl.textContent = err.message; errEl.classList.remove("hidden");
+      }
     } finally {
       $("#authSubmit").disabled = false;
       resetCaptcha();   // single-use token spent — refresh the widget for any retry
