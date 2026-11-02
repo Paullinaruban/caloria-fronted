@@ -384,6 +384,39 @@
     $("#subsFailed").innerHTML = subTable(s.failed_payments, [["Email","email"],["When","created_at"]]);
   }
 
+  /* ---------------- Leads & conversion ---------------- */
+  async function loadLeads(q = "") {
+    const d = await api("/api/admin/leads" + (q ? "?q=" + encodeURIComponent(q) : ""));
+    const s = d.stats || {};
+    $("#ldMode").textContent = s.enabled
+      ? (s.test_mode ? "· recovery ON (test mode)" : "· recovery ON (live)")
+      : "· recovery emails OFF";
+    $("#ldKpis").innerHTML = [
+      ["Total leads", s.total_leads], ["New (no account)", s.new_leads],
+      ["Marketing opt-in", s.marketing_consented], ["Registered", s.registration_completed],
+      ["Email verified", s.email_verified], ["Checkout started", s.checkout_started],
+      ["Checkout completed", s.checkout_completed], ["Abandoned checkouts", s.abandoned_checkouts],
+      ["Active trials", s.active_trials], ["Converted (paid)", s.converted_paid],
+      ["Recovery emails sent", s.recovery_emails_sent], ["Recovery conversion", (s.recovery_conversion_rate || 0) + "%"],
+    ].map(([k, v]) => `<div class="kpi"><b>${v == null ? "—" : v}</b><span>${k}</span></div>`).join("");
+    const leads = d.leads || [];
+    $("#ldTable").innerHTML = leads.length
+      ? `<table><thead><tr><th>Email</th><th>Status</th><th>Opt-in</th><th>Account</th>
+          <th>Verified</th><th>Recovery sent</th><th>Captured</th></tr></thead><tbody>` +
+        leads.map((l) => `<tr>
+          <td class="email">${esc(l.email || "—")}</td>
+          <td><span class="tag">${esc(l.status || "—")}</span></td>
+          <td>${l.unsubscribed ? '<span class="tag bad">Unsub</span>' : (l.marketing_consent ? '<span class="tag ok">Yes</span>' : '<span class="muted">No</span>')}</td>
+          <td>${l.registered_user_id ? '<span class="tag ok">Yes</span>' : '<span class="muted">—</span>'}</td>
+          <td>${l.email_verified_at ? '<span class="tag ok">Yes</span>' : '<span class="muted">—</span>'}</td>
+          <td>${(l.recovery_sent && l.recovery_sent.length) ? l.recovery_sent.map((t) => `<span class="tag premium">${esc(t.replace("email_", "").toUpperCase())}</span>`).join(" ") : '<span class="muted">—</span>'}</td>
+          <td>${fmtDate(l.created_at)}</td></tr>`).join("") + `</tbody></table>`
+      : `<div class="muted">No leads yet.</div>`;
+  }
+  $("#ldSearchBtn").addEventListener("click", () => loadLeads($("#ldSearch").value.trim()));
+  $("#ldSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") loadLeads($("#ldSearch").value.trim()); });
+  $("#ldRefresh").addEventListener("click", () => loadLeads($("#ldSearch").value.trim()));
+
   /* ---------------- Analytics ---------------- */
   async function loadAnalytics() {
     const a = await api("/api/admin/analytics");
@@ -612,7 +645,7 @@
   });
 
   /* ---------------- tabs / boot ---------------- */
-  const LOADERS = { business: loadBusiness, club: loadClub, users: () => loadUsers(), subs: loadSubs, community: loadCommunity, analytics: loadAnalytics, usage: loadUsage, aicost: loadAiCost };
+  const LOADERS = { business: loadBusiness, club: loadClub, users: () => loadUsers(), subs: loadSubs, leads: () => loadLeads(), community: loadCommunity, analytics: loadAnalytics, usage: loadUsage, aicost: loadAiCost };
   function showTab(name) {
     $$('#tabs button').forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
     $$('section[data-panel]').forEach((s) => s.classList.toggle("hidden", s.dataset.panel !== name));

@@ -34,7 +34,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
 
   <link rel="stylesheet" href="css/fonts.css" />
-  <link rel="stylesheet" href="css/styles.css?v=45" />
+  <link rel="stylesheet" href="css/styles.css?v=49" />
   <link rel="stylesheet" href="css/winter.css?v=2" />
   <!-- Native (Capacitor) refinements — inert on the web -->
   <link rel="stylesheet" href="css/native.css?v=1" />
@@ -225,7 +225,6 @@
             <span class="pp-amt" id="priceAmt">$19</span><span class="pp-per" id="pricePer">/month</span>
           </div>
           <p class="pp-note" id="priceNote">Billed monthly · cancel anytime</p>
-          <p class="promo-label" id="promoLabelCard">Limited-time offer — until August 5</p>
           <ul class="plan-feats">
             <li>✓ <b>Unlimited</b> food scans</li>
             <li>✓ Advanced 7-nutrient analysis</li>
@@ -235,22 +234,6 @@
             <li>✓ Shopping lists &amp; premium recipes</li>
           </ul>
           <button class="btn btn-primary" id="pricingUpgradeBtn" data-auth="signup">Join The Club</button>
-        </div>
-
-        <!-- Caloria Starter — entry plan (shown when configured). Sits beside Club. -->
-        <div class="plan plan-starter glass hidden" id="homeStarterPlan">
-          <h3>Starter</h3>
-          <div class="plan-price">
-            <span class="pp-amt" id="homeStarterAmt">$11.99</span><span class="pp-per">/ one month</span>
-          </div>
-          <p class="pp-note">One-time · does not auto-renew</p>
-          <ul class="plan-feats">
-            <li>✓ One month of progress tracking</li>
-            <li>✓ Core tracking features</li>
-            <li class="muted">✗ No AI Meal Scan</li>
-            <li class="muted">✗ No AI Coach</li>
-          </ul>
-          <button class="btn btn-glow btn-block" data-auth="signup">Start with Starter</button>
         </div>
       </div>
     </section>
@@ -463,8 +446,8 @@
   <div class="modal-overlay" id="paywallModal">
     <div class="modal glass-strong paywall">
       <button class="modal-close" id="paywallClose">×</button>
-      <span class="pill pill-aqua" id="paywallTrial">Premium</span>
-      <h2 id="paywallTitle">Join the Supermodel Wellness Club</h2>
+      <span class="pill pill-aqua" id="paywallTrial">3 DAYS FREE</span>
+      <h2 id="paywallTitle">Start your 3-day free trial</h2>
       <p class="modal-sub" id="paywallReason">Go unlimited and get the full platform.</p>
       <ul class="paywall-feats">
         <li>✓ <b>Unlimited</b> AI food scans</li>
@@ -476,18 +459,29 @@
         <button class="bt-opt active" data-interval="monthly">Monthly · <b id="pwMonthly"><s>$25</s> $19</b></button>
         <button class="bt-opt" data-interval="yearly">Yearly · <b id="pwYearly">$99</b></button>
       </div>
-      <p class="promo-label" id="promoLabelPw">Limited-time offer — until August 5</p>
-      <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
-      <button class="btn btn-glow btn-block btn-lg" id="paywallCheckout">Join The Club</button>
-      <p class="muted paywall-note" id="paywallNote">Cancel anytime.</p>
-      <!-- Entry plan for brand-new members only (web only). Toggled by JS when eligible. -->
-      <div class="starter-offer hidden" id="pwStarterWrap">
-        <div class="starter-divider"><span>or start smaller</span></div>
-        <button class="btn btn-glow btn-block starter-btn" id="pwStarter" type="button">
-          Caloria Starter — <b id="pwStarterPrice">$11.99</b> · one month
-        </button>
-        <p class="muted starter-note">One month of core tracking. No AI Meal Scan or AI Coach, and it doesn't auto-renew.</p>
-      </div>
+      <p class="trial-line">3 days free · No payment today</p>
+      <button class="btn btn-glow btn-block btn-lg" id="paywallCheckout">Start My 3-Day Free Trial →</button>
+      <p class="muted paywall-note" id="paywallNote">Your subscription starts with 3 free days. After that, your selected plan renews automatically at the displayed price unless you cancel before the trial ends.</p>
+      <p class="refund-notice">After the trial, purchases are final and non-refundable. Cancel anytime before your trial ends to avoid being charged.</p>
+    </div>
+  </div>
+
+  <!-- ============== EMAIL-CAPTURE POPUP (new visitors, after ~3s) ============== -->
+  <div class="ec-pop-overlay hidden" id="ecPop" role="dialog" aria-modal="true" aria-labelledby="ecPopTitle">
+    <div class="ec-pop glass-strong">
+      <button class="ec-pop-close" id="ecPopClose" type="button" aria-label="Close">×</button>
+      <img class="ec-pop-logo" src="/assets/logo-mascot.png?v=1" alt="Caloria" />
+      <span class="pill pill-aqua trial-pill">3 DAYS FREE</span>
+      <h3 id="ecPopTitle">Your 3-day glow-up starts here.</h3>
+      <p class="ec-pop-sub">Join Caloria Club and get 3 days of full Premium access on us.</p>
+      <form id="ecPopForm" novalidate>
+        <input id="ecPopEmail" type="email" inputmode="email" autocomplete="email" placeholder="Enter your email address" />
+        <label class="ec-pop-consent"><input type="checkbox" id="ecPopConsent" />
+          <span>Send me wellness tips &amp; reminders by email. Unsubscribe anytime.</span></label>
+        <button class="btn btn-glow btn-block btn-lg" type="submit" id="ecPopBtn">Unlock My 3 Free Days</button>
+      </form>
+      <p class="ec-pop-err hidden" id="ecPopErr"></p>
+      <p class="ec-pop-fine">No payment today. Cancel anytime.</p>
     </div>
   </div>
 
@@ -515,9 +509,9 @@
     <div class="sub-gate hidden" id="subGate">
       <div class="sub-gate-card glass-strong">
         <img class="sub-gate-logo" src="/assets/logo-mascot.png?v=1" alt="Caloria" />
-        <span class="pill pill-aqua">Members only</span>
-        <h2>Choose your plan to continue</h2>
-        <p class="muted">Caloria is a private, members-only wellness club. Pick a plan to unlock everything.</p>
+        <span class="pill pill-aqua trial-pill">3 DAYS FREE</span>
+        <h2>Choose your plan and start your free trial</h2>
+        <p class="muted">Enjoy full access to everything Caloria has to offer for 3 days.</p>
         <ul class="plan-feats">
           <li>✓ Unlimited AI food scans</li>
           <li>✓ Personalized meal plans + diet modes</li>
@@ -529,21 +523,13 @@
           <select class="cur-select" id="sgCurrency" aria-label="Currency"></select>
         </div>
         <div class="bill-toggle">
-          <button class="bt-opt active" data-interval="monthly">Monthly · <b id="sgMonthly"><s>$25</s> $19</b></button>
+          <button class="bt-opt active" data-interval="monthly">Monthly · <b id="sgMonthly">$19.99</b></button>
           <button class="bt-opt" data-interval="yearly">Yearly · <b id="sgYearly">$99</b></button>
         </div>
-        <p class="promo-label" id="promoLabelSg">Limited-time offer — until August 5</p>
-        <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
-        <button class="btn btn-glow btn-block btn-lg" id="sgCheckout">Continue to secure checkout →</button>
-        <p class="muted checkout-note" id="sgNote"></p>
-        <!-- Entry plan for brand-new members only (web only). Toggled by JS when eligible. -->
-        <div class="starter-offer hidden" id="sgStarterWrap">
-          <div class="starter-divider"><span>or start smaller</span></div>
-          <button class="btn btn-glow btn-block starter-btn" id="sgStarter" type="button">
-            Caloria Starter — <b id="sgStarterPrice">$11.99</b> · one month
-          </button>
-          <p class="muted starter-note">One month of core tracking. No AI Meal Scan or AI Coach, and it doesn't auto-renew.</p>
-        </div>
+        <p class="trial-line">3 days free · No payment today</p>
+        <button class="btn btn-glow btn-block btn-lg" id="sgCheckout">Start My 3-Day Free Trial →</button>
+        <p class="muted checkout-note" id="sgNote">Your subscription starts with 3 free days. After that, your selected plan renews automatically at the displayed price unless you cancel before the trial ends.</p>
+        <p class="refund-notice">After the trial, purchases are final and non-refundable. Cancel anytime before your trial ends to avoid being charged.</p>
         <!-- iOS/Android app only (Apple requires Restore + visible legal links) -->
         <div class="native-only iap-extra">
           <button class="sub-gate-restore" id="sgRestore" type="button">Restore purchases</button>
@@ -751,7 +737,7 @@
       <section class="view view-scan" data-view="scan">
         <div class="view-head"><h2>Scan a meal</h2><p class="muted">Real AI analysis — powered by GPT-4o Vision + USDA.</p></div>
 
-        <!-- Premium-only gate: Starter / free members see this instead of the camera. -->
+        <!-- Premium-only gate: non-premium members see this instead of the camera. -->
         <div class="scan-stage hidden" id="scanLocked">
           <div class="upgrade-card glass-strong">
             <span class="pill pill-aqua">Premium</span>
@@ -1045,7 +1031,6 @@
             <button class="bt-opt active" data-interval="monthly">Monthly · <b id="upMonthly"><s>$25</s> $19</b></button>
             <button class="bt-opt" data-interval="yearly">Yearly · <b id="upYearly">$99</b></button>
           </div>
-          <p class="promo-label" id="promoLabelUp">Limited-time offer — until August 5</p>
           <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
           <button class="btn btn-primary btn-block btn-lg" id="checkoutBtn">Upgrade to Premium</button>
           <p class="muted checkout-note" id="checkoutNote"></p>
@@ -1127,6 +1112,6 @@
        the PUBLIC (logged-out) landing too, not just the logged-in app. -->
   <script src="js/seasonal.js?v=2"></script>
   <script src="js/winter.js?v=2"></script>
-  <script src="js/app.js?v=63"></script>
+  <script src="js/app.js?v=67"></script>
 </body>
 </html>

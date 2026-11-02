@@ -60,7 +60,10 @@
       }
       route();
       updateVerifyBanner();
-      await handleAuthLinks();
+      // Guard the auth-link step so a malformed verify/reset URL can never stop
+      // the popup (and everything after) from initializing.
+      try { await handleAuthLinks(); } catch (_) {}
+      try { ecInit(); } catch (_) {}   // 3-second email-capture popup (new visitors only)
       // Winter Arc seasonal layer — additive, fully gated by its own flag and by
       // the premium /api/winterarc endpoint. Hands it a small bridge rather than
       // exposing app internals. Safe no-op when the script or user isn't present.
@@ -137,10 +140,10 @@
     const note = $("#sgNote"), btn = $("#sgCheckout");
     if (!btn) return;
     if (user && user.needs_verification) {
-      note && (note.textContent = "Verify your email first, then choose a plan.");
+      note && (note.textContent = "Verify your email first, then start your free trial.");
     } else {
-      note && (note.textContent = "");
-      btn.textContent = "Continue to secure checkout →";
+      note && (note.textContent = "Your subscription starts with 3 free days. After that, your selected plan renews automatically at the displayed price unless you cancel before the trial ends.");
+      btn.textContent = "Start My 3-Day Free Trial →";
     }
   }
 
@@ -196,8 +199,9 @@
   // YEARLY_PRICE_USD — the same value Stripe's Price is minted from). Never a
   // hardcoded pixel constant.
   function planValue(interval) {
-    if (interval === "starter") return cfg.starter_price_usd || 11.99;
-    return interval === "yearly" ? (cfg.price_yearly_usd || 99) : (cfg.price_monthly_usd || 19);
+    // Only two plans exist: yearly ($99) and monthly ($19.99). Anything else
+    // (e.g. a legacy value) falls back to the monthly price.
+    return interval === "yearly" ? (cfg.price_yearly_usd || 99) : (cfg.price_monthly_usd || 19.99);
   }
   // Fire the Meta 'Purchase' event — ONLY from a confirmed, paid activation.
   // Reads the plan chosen at checkout (persisted across the Stripe redirect) so
@@ -295,10 +299,7 @@
     // "$25 $19" in every monthly toggle (paywall / subscription gate / upgrade).
     const monthlyHTML = "<s>" + cmp + "</s> " + m;
     ["upMonthly", "pwMonthly", "sgMonthly"].forEach((id) => { const el = $("#" + id); if (el) el.innerHTML = monthlyHTML; });
-    // Retire the old time-limited promo labels.
-    ["promoLabelCard", "promoLabelPw", "promoLabelSg", "promoLabelUp"].forEach((id) => {
-      const el = $("#" + id); if (el) el.style.display = "none";
-    });
+    // (Time-limited "until August 5" promo labels were removed from the markup.)
     // Yearly savings %, computed from the single pricing source so it's never stale.
     if (cfg.price_monthly_usd && cfg.price_yearly_usd) {
       const pct = Math.round((1 - cfg.price_yearly_usd / (cfg.price_monthly_usd * 12)) * 100);
@@ -307,38 +308,90 @@
     $("#upYearly") && ($("#upYearly").textContent = y);
     $("#pwYearly") && ($("#pwYearly").textContent = y);
     $("#sgYearly") && ($("#sgYearly").textContent = y);
-    // Subscription-only: no trial anywhere.
-    $("#paywallTrial") && ($("#paywallTrial").textContent = "Premium");
-    $("#paywallCheckout") && ($("#paywallCheckout").textContent = "Join The Club");
-    $("#paywallNote") && ($("#paywallNote").textContent = "Cancel anytime.");
-    $("#ubTitle") && ($("#ubTitle").textContent = "Join the Supermodel Wellness Club");
-    $("#checkoutBtn") && ($("#checkoutBtn").textContent = "Join The Club");
-    applyStarterOffer();
+    // 3-day free trial on both plans.
+    $("#paywallTrial") && ($("#paywallTrial").textContent = "3 DAYS FREE");
+    $("#paywallCheckout") && ($("#paywallCheckout").textContent = "Start My 3-Day Free Trial →");
+    $("#paywallNote") && ($("#paywallNote").textContent = "Your subscription starts with 3 free days. After that, your selected plan renews automatically at the displayed price unless you cancel before the trial ends.");
+    $("#ubTitle") && ($("#ubTitle").textContent = "Start your 3-day free trial");
+    $("#checkoutBtn") && ($("#checkoutBtn").textContent = "Start My 3-Day Free Trial →");
   }
 
-  // Caloria Starter ($11.99) — a one-month, no-AI entry plan shown ONLY to brand-new
-  // members who have never subscribed. Web only (native uses Apple/Google IAP). The
-  // backend independently enforces eligibility, so this is purely presentational.
-  let _starterWired = false;
-  function applyStarterOffer() {
-    const native = !!(window.CaloriaNative && window.CaloriaNative.isNative);
-    const enabled = !!(cfg && cfg.starter_enabled && !native);
-    const price = (cfg && cfg.starter_price) || "$11.99";
-    // Homepage pricing card — informational, shown to every visitor when Starter is live.
-    const home = $("#homeStarterPlan");
-    if (home) { home.classList.toggle("hidden", !enabled); const ha = $("#homeStarterAmt"); if (ha) ha.textContent = price; }
-    // In-app gate/paywall offer — only brand-new, never-subscribed members (web only).
-    const eligible = !!(enabled && user && user.starter_eligible);
-    [["#sgStarterWrap", "#sgStarterPrice"], ["#pwStarterWrap", "#pwStarterPrice"]].forEach(([wrap, pr]) => {
-      const w = $(wrap); if (!w) return;
-      w.classList.toggle("hidden", !eligible);
-      const p = $(pr); if (p) p.textContent = price;
+  // The Caloria Starter entry plan is RETIRED — it is no longer offered anywhere in
+  // the customer-facing experience. Pricing is exactly two options: $19.99/mo and
+  // $99/yr. (Existing Starter subscribers keep their access + "Starter" account
+  // label via their own plan flag; nothing here affects that or their billing.)
+
+  /* ---------- 3-second email-capture popup (new visitors only) ---------- */
+  const EC_DISMISS = "caloria.ecpop.dismissed";
+  let ecShown = false, ecSubmitting = false, ecWired = false;
+  function ecEligible() {
+    // Not for logged-in members, trialing/active subscribers, native app, or if
+    // already dismissed this session.
+    if (token || user) return false;
+    if (window.CaloriaNative && window.CaloriaNative.isNative) return false;
+    try { if (sessionStorage.getItem(EC_DISMISS)) return false; } catch (_) {}
+    return true;
+  }
+  function ecDismiss() {
+    const p = $("#ecPop"); if (p) p.classList.add("hidden");
+    try { sessionStorage.setItem(EC_DISMISS, "1"); } catch (_) {}
+  }
+  function ecShow() {
+    const p = $("#ecPop");
+    if (ecShown || !p || !ecEligible()) return;
+    ecShown = true; p.classList.remove("hidden");
+  }
+  function ecInit() {
+    const p = $("#ecPop"); if (!p || ecWired) return;
+    ecWired = true;
+    $("#ecPopClose") && $("#ecPopClose").addEventListener("click", ecDismiss);
+    p.addEventListener("click", (e) => { if (e.target === p) ecDismiss(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !p.classList.contains("hidden")) ecDismiss();
     });
-    if (_starterWired) return;
-    _starterWired = true;
-    const sg = $("#sgStarter"), pw = $("#pwStarter");
-    if (sg) sg.addEventListener("click", (e) => startCheckout(e.currentTarget, "starter"));
-    if (pw) pw.addEventListener("click", (e) => startCheckout(e.currentTarget, "starter"));
+    const form = $("#ecPopForm");
+    form && form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (ecSubmitting) return;
+      const el = $("#ecPopEmail"), err = $("#ecPopErr");
+      const email = el ? el.value.trim() : "";
+      const consentEl = $("#ecPopConsent");
+      const marketing_consent = !!(consentEl && consentEl.checked);
+      if (!validEmailSyntax(email)) { err.textContent = "Please enter a valid email address."; err.classList.remove("hidden"); return; }
+      err.classList.add("hidden");
+      ecSubmitting = true;
+      const btn = $("#ecPopBtn"), prev = btn.textContent; btn.disabled = true; btn.textContent = "One sec…";
+      try {
+        // Reuse the existing lead endpoint — saves the email only. NO account and
+        // NO trial is created here; the trial starts only at real Checkout. The
+        // consent box is EXPLICIT opt-in for the re-engagement email (unchecked
+        // by default — entering an email alone never grants marketing consent).
+        await api("/api/lead", { method: "POST", auth: false,
+          body: { email, marketing_consent, source: "popup" } });
+        // Success → guide into signup + free-trial checkout, email prefilled.
+        const inner = p.querySelector(".ec-pop");
+        inner.innerHTML =
+          '<button class="ec-pop-close" id="ecPopClose2" type="button" aria-label="Close">×</button>' +
+          '<img class="ec-pop-logo" src="/assets/logo-mascot.png?v=1" alt="Caloria" />' +
+          '<span class="pill pill-aqua trial-pill">3 DAYS FREE</span>' +
+          "<h3>You're in! 🤍</h3>" +
+          '<p class="ec-pop-sub">Let\'s set up your 3-day free trial — it only takes a minute.</p>' +
+          '<button class="btn btn-glow btn-block btn-lg" id="ecPopGo" type="button">Continue →</button>' +
+          '<p class="ec-pop-fine">No payment today. Cancel anytime.</p>';
+        $("#ecPopClose2") && $("#ecPopClose2").addEventListener("click", ecDismiss);
+        $("#ecPopGo") && $("#ecPopGo").addEventListener("click", () => {
+          ecDismiss();
+          openAuth("signup");
+          const em = $("#authEmail"); if (em) em.value = email;   // existing-account case is handled by signup (409 → log in)
+        });
+      } catch (e2) {
+        err.textContent = (e2 && e2.message) ? e2.message : "Something went wrong. Please try again.";
+        err.classList.remove("hidden");
+        btn.disabled = false; btn.textContent = prev; ecSubmitting = false;
+      }
+    });
+    // Trigger ~3s after the visitor lands, if still eligible.
+    setTimeout(ecShow, 3000);
   }
 
   // Currency is handled entirely by Stripe Adaptive Pricing at checkout — no
@@ -2314,7 +2367,7 @@
   async function startCheckout(btn, overrideInterval) {
     if (checkoutInFlight) return;
     checkoutInFlight = true;
-    // Starter is a web-only entry plan; everything else uses the chosen interval.
+    // Two plans only: monthly ($19.99) or yearly ($99) — the chosen interval.
     const interval = overrideInterval || billingInterval;
     if (btn) { btn.disabled = true; btn.dataset.prev = btn.textContent; btn.textContent = "Opening secure checkout…"; }
     const note = $("#sgNote"); if (note) note.classList.remove("checkout-error");

@@ -206,7 +206,7 @@ a { color: inherit; text-decoration: none; }
 .plan-price { display: flex; align-items: baseline; gap: 4px; margin: 12px 0 4px; }
 .pp-compare { font-family: var(--font-head); font-size: 26px; font-weight: 700; color: var(--ink-soft); opacity: .55; text-decoration: line-through; text-decoration-thickness: 2px; margin-right: 4px; }
 /* Temporary promotional-price label (display only). */
-.promo-label { margin: 6px 0 0; font-size: 12px; font-weight: 700; letter-spacing: .2px; color: var(--rose-deep, #cc4a86); }
+/* (.promo-label removed — the "until August 5" time-limited labels are gone.) */
 .bt-opt s, .plan-price s, .pp-compare { opacity: .55; }
 .pp-amt { font-family: var(--font-head); font-size: 48px; font-weight: 700; color: var(--rose-deep); }
 .pp-per { color: var(--ink-soft); font-weight: 600; }
@@ -314,6 +314,25 @@ a { color: inherit; text-decoration: none; }
 .ob-email input { width: 100%; padding: 16px 18px; border-radius: var(--r-md); background: rgba(255,255,255,.8); box-shadow: inset 0 0 0 1.5px var(--blush); border: none; font-family: var(--font-body); font-size: 17px; color: var(--rose-deep); }
 .ob-email input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--rose); }
 .ob-fine { margin-top: 12px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+/* --- 3-day trial messaging --- */
+.trial-pill { letter-spacing: .08em; font-weight: 800; }
+.trial-line { margin: 6px 0 10px; text-align: center; font-weight: 700; color: var(--rose-deep); font-size: 13px; }
+
+/* --- Email-capture popup (new visitors, after ~3s) --- */
+.ec-pop-overlay { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(42,34,48,.42); backdrop-filter: blur(3px); }
+.ec-pop { position: relative; width: 100%; max-width: 380px; text-align: center; padding: 28px 24px 22px; border-radius: var(--r-lg, 22px); background: linear-gradient(180deg, #fff 0%, var(--cream, #fff8f4) 100%); box-shadow: 0 24px 60px rgba(42,34,48,.22); }
+.ec-pop-logo { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; margin: 0 auto 10px; display: block; }
+.ec-pop h3 { font-family: var(--font-head); font-size: 23px; color: var(--rose-deep); margin: 10px 0 6px; line-height: 1.2; }
+.ec-pop-sub { color: var(--ink-soft); font-size: 14px; line-height: 1.5; margin-bottom: 16px; }
+.ec-pop #ecPopEmail { width: 100%; padding: 14px 16px; margin-bottom: 10px; border-radius: var(--r-md); background: rgba(255,255,255,.9); box-shadow: inset 0 0 0 1.5px var(--blush); border: none; font-family: var(--font-body); font-size: 16px; color: var(--rose-deep); }
+.ec-pop #ecPopEmail:focus { outline: none; box-shadow: inset 0 0 0 2px var(--rose); }
+.ec-pop-consent { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 12px; text-align: left; color: var(--ink-soft); font-size: 12.5px; line-height: 1.45; cursor: pointer; }
+.ec-pop-consent input { margin-top: 2px; width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--rose); cursor: pointer; }
+.ec-pop-err { color: #c0392b; font-size: 13px; margin-top: 8px; }
+.ec-pop-fine { margin-top: 12px; color: var(--ink-soft); font-size: 12px; }
+.ec-pop-close { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 24px; line-height: 1; color: var(--ink-soft); cursor: pointer; }
+@media (max-width: 420px) { .ec-pop { padding: 24px 18px 20px; } .ec-pop h3 { font-size: 21px; } }
+
 /* Primary results CTA — sits directly under the macro card, above the benefits */
 .ob-join-cta { margin-top: 18px; }
 .ob-join-note { margin-top: 8px; text-align: center; color: var(--ink-soft); font-size: 12px; }
@@ -483,18 +502,7 @@ a { color: inherit; text-decoration: none; }
 .wo-meta { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--ink-soft); background: rgba(255,255,255,.7); padding: 4px 12px; border-radius: 100px; box-shadow: inset 0 0 0 1.5px var(--blush); }
 .wo-complete-btn { margin-top: 4px; }
 .refund-notice { font-size: 12px; line-height: 1.45; color: var(--ink-soft); background: rgba(255,255,255,.55); border-radius: 12px; padding: 10px 12px; margin: 12px 0; text-align: center; box-shadow: inset 0 0 0 1.5px var(--blush); }
-/* Caloria Starter — entry-plan offer, visually part of the pricing block */
-.starter-offer { margin-top: 14px; }
-.starter-divider { display: flex; align-items: center; gap: 10px; color: var(--ink-soft); font-size: 12px; margin: 4px 0 10px; }
-.starter-divider::before, .starter-divider::after { content: ""; flex: 1; height: 1px; background: rgba(0,0,0,.08); }
-/* Same pink gradient / pill / typography as the primary CTA, one step smaller so it
-   reads as the secondary choice. Wraps instead of overflowing on narrow screens. */
-.starter-btn { white-space: normal; line-height: 1.25; }
-.starter-btn b { font-weight: 800; }
-.starter-note { font-size: 11.5px; line-height: 1.4; margin-top: 6px; text-align: center; }
-/* Homepage Starter plan card — sits beside the Club card, lighter weight. */
-.plan-starter h3 { color: var(--ink); }
-.plan-starter .pp-per { margin-left: 2px; }
+/* (Retired Caloria Starter plan styles removed — pricing is $19.99/mo & $99/yr only.) */
 .workout-history-block { margin-top: 22px; }
 .wh-title { font-size: 16px; margin-bottom: 10px; }
 .wh-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--glass-strong); box-shadow: var(--sh-sm); margin-bottom: 8px; }
