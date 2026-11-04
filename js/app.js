@@ -9,7 +9,7 @@
 
   let token = localStorage.getItem(TOKEN_KEY) || null;
   let user = null;
-  let cfg = { price_monthly: "$19", price_yearly: "$99", price_monthly_compare: "$25",
+  let cfg = { price_monthly: "$19.99", price_yearly: "$99", price_monthly_compare: "$25",
               price_monthly_usd: 19, price_yearly_usd: 99, price_monthly_compare_usd: 25,
               stripe_configured: false, images_enabled: false, trial_days: 0 };
   let billingInterval = "monthly";
@@ -139,11 +139,15 @@
   function updateGateForVerification() {
     const note = $("#sgNote"), btn = $("#sgCheckout");
     if (!btn) return;
+    const eligible = (!user) || (user.trial_eligible !== false);
     if (user && user.needs_verification) {
-      note && (note.textContent = "Verify your email first, then start your free trial.");
+      note && (note.textContent = eligible
+        ? "Verify your email first, then start your free trial."
+        : "Verify your email first to continue.");
     } else {
-      note && (note.textContent = "Your subscription starts with 3 free days. After that, your selected plan renews automatically at the displayed price unless you cancel before the trial ends.");
-      btn.textContent = "Start My 3-Day Free Trial →";
+      // Defer to applyPricing so the trial-vs-paid copy stays eligibility-aware
+      // (a user who already used their trial must not be re-promised a free one).
+      applyPricing();
     }
   }
 
@@ -280,12 +284,12 @@
   }));
 
   // ---- TEMPORARY WEBSITE PROMO (display only) ----------------------------
-  // Discounted monthly pricing everywhere: $25 struck through, $19 emphasized.
+  // Discounted monthly pricing everywhere: $25 struck through, $19.99 emphasized.
   // Values come from /api/config (the backend single source of truth); the
   // literals here are only fallbacks used until that request returns.
   function applyPricing() {
     const y   = cfg.price_yearly || "$99";
-    const m   = cfg.price_monthly || "$19";                 // emphasized price
+    const m   = cfg.price_monthly || "$19.99";              // emphasized price
     const cmp = cfg.price_monthly_compare || "$25";         // struck-through "was" price
     $("#priceAmt") && ($("#priceAmt").textContent = billingInterval === "monthly" ? m : y);
     $("#pricePer") && ($("#pricePer").textContent = billingInterval === "monthly" ? "/month" : "/year");
@@ -296,7 +300,7 @@
       cmpEl.textContent = cmp;
       cmpEl.style.display = (billingInterval === "monthly") ? "" : "none";
     }
-    // "$25 $19" in every monthly toggle (paywall / subscription gate / upgrade).
+    // "$25 $19.99" in every monthly toggle (paywall / subscription gate / upgrade).
     const monthlyHTML = "<s>" + cmp + "</s> " + m;
     ["upMonthly", "pwMonthly", "sgMonthly"].forEach((id) => { const el = $("#" + id); if (el) el.innerHTML = monthlyHTML; });
     // (Time-limited "until August 5" promo labels were removed from the markup.)
@@ -308,12 +312,40 @@
     $("#upYearly") && ($("#upYearly").textContent = y);
     $("#pwYearly") && ($("#pwYearly").textContent = y);
     $("#sgYearly") && ($("#sgYearly").textContent = y);
-    // 3-day free trial on both plans.
-    $("#paywallTrial") && ($("#paywallTrial").textContent = "3 DAYS FREE");
-    $("#paywallCheckout") && ($("#paywallCheckout").textContent = "Start My 3-Day Free Trial →");
-    $("#paywallNote") && ($("#paywallNote").textContent = "Your subscription starts with 3 free days. After that, your selected plan renews automatically at the displayed price unless you cancel before the trial ends.");
-    $("#ubTitle") && ($("#ubTitle").textContent = "Start your 3-day free trial");
-    $("#checkoutBtn") && ($("#checkoutBtn").textContent = "Start My 3-Day Free Trial →");
+    // Trial copy is shown ONLY to trial-eligible visitors. A logged-in user whom
+    // the backend will charge immediately (already used a trial, or ever
+    // subscribed) must NEVER be promised a free trial. Logged-out visitors are
+    // treated as eligible (brand-new). Source of truth: user.trial_eligible from
+    // /api/me (auth.trial_eligible ↔ billing.create_checkout enforce the same rule).
+    const trialOffer = (!user) || (user.trial_eligible !== false);
+    const paidLabel = (billingInterval === "yearly")
+      ? ("Subscribe — " + (cfg.price_yearly || "$99") + "/year")
+      : ("Subscribe — " + m + "/month");
+    const trialNote = "Your subscription starts with 3 free days. After that, your selected plan renews automatically at the displayed price unless you cancel before the trial ends.";
+    const paidNote  = "You've already used your free trial, so your plan starts today at the price shown. Cancel anytime.";
+    if (trialOffer) {
+      $("#paywallTrial") && ($("#paywallTrial").style.display = "", $("#paywallTrial").textContent = "3 DAYS FREE");
+      $("#paywallTitle") && ($("#paywallTitle").textContent = "Start your 3-day free trial");
+      $("#paywallCheckout") && ($("#paywallCheckout").textContent = "Start My 3-Day Free Trial →");
+      $("#paywallNote") && ($("#paywallNote").textContent = trialNote);
+      $("#ubTitle") && ($("#ubTitle").textContent = "Start your 3-day free trial");
+      $("#checkoutBtn") && ($("#checkoutBtn").textContent = "Start My 3-Day Free Trial →");
+      $("#sgTitle") && ($("#sgTitle").textContent = "Choose your plan and start your free trial");
+      $("#sgCheckout") && ($("#sgCheckout").textContent = "Start My 3-Day Free Trial →");
+      $("#sgNote") && ($("#sgNote").textContent = trialNote);
+      $$(".trial-pill, .trial-line").forEach((el) => (el.style.display = ""));
+    } else {
+      $("#paywallTrial") && ($("#paywallTrial").style.display = "none");
+      $("#paywallTitle") && ($("#paywallTitle").textContent = "Subscribe to Caloria Premium");
+      $("#paywallCheckout") && ($("#paywallCheckout").textContent = paidLabel);
+      $("#paywallNote") && ($("#paywallNote").textContent = paidNote);
+      $("#ubTitle") && ($("#ubTitle").textContent = "Subscribe to Caloria Premium");
+      $("#checkoutBtn") && ($("#checkoutBtn").textContent = paidLabel);
+      $("#sgTitle") && ($("#sgTitle").textContent = "Subscribe to Caloria Premium");
+      $("#sgCheckout") && ($("#sgCheckout").textContent = paidLabel);
+      $("#sgNote") && ($("#sgNote").textContent = paidNote);
+      $$(".trial-pill, .trial-line").forEach((el) => (el.style.display = "none"));
+    }
   }
 
   // The Caloria Starter entry plan is RETIRED — it is no longer offered anywhere in
