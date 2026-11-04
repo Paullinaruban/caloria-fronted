@@ -964,8 +964,12 @@
   }
   function hasStoredOb() { try { return !!localStorage.getItem(OB_STORE); } catch (_) { return false; } }
 
-  // ---- unit + BMI helpers (Height in cm, Weight in lbs) ----
-  const LBS_TO_KG = 0.45359237;
+  // ---- unit + BMI helpers ----
+  // CANONICAL storage never changes: obAns.height is always cm, obAns.weight_lbs
+  // is always lbs. Only the *display* unit changes (obAns.height_unit cm|in,
+  // obAns.weight_unit lbs|kg). So BMI, validation and buildProfile are untouched.
+  const LBS_TO_KG = 0.45359237;   // 1 lb = 0.45359237 kg  (⇒ 1 kg = 2.20462 lb)
+  const IN_TO_CM = 2.54;          // 1 inch = 2.54 cm (exact)
   function validHeightCm(v) { return typeof v === "number" && v >= 120 && v <= 220; }
   function validWeightLbs(v) { return typeof v === "number" && v >= 70 && v <= 400; }   // ~32–181 kg
   function bmiFrom(cm, lbs) {
@@ -973,6 +977,13 @@
     const kg = lbs * LBS_TO_KG, m = cm / 100;
     return Math.round((kg / (m * m)) * 10) / 10;
   }
+  function round1(n) { return (n == null || isNaN(n)) ? null : Math.round(n * 10) / 10; }
+  // canonical cm  <->  displayed height (cm or in)
+  function cmToDisp(cm, unit) { return cm == null ? null : round1(unit === "in" ? cm / IN_TO_CM : cm); }
+  function dispToCm(v, unit) { return (v == null || isNaN(v)) ? null : (unit === "in" ? v * IN_TO_CM : v); }
+  // canonical lbs <->  displayed weight (lbs or kg)
+  function lbsToDisp(lbs, unit) { return lbs == null ? null : round1(unit === "kg" ? lbs * LBS_TO_KG : lbs); }
+  function dispToLbs(v, unit) { return (v == null || isNaN(v)) ? null : (unit === "kg" ? v / LBS_TO_KG : v); }
   function currentAge() {
     const by = obAns.birth_year;
     return (typeof by === "number") ? (NOW_YEAR - by) : null;
@@ -1044,20 +1055,35 @@
         persistOb(); updateObNextState();
       });
     } else if (s.type === "body") {
-      const cm = obAns.height, lbs = obAns.weight_lbs;
+      // Display units (default cm / lbs) — the canonical values stay cm + lbs.
+      const hu = (obAns.height_unit === "in") ? "in" : "cm";
+      const wu = (obAns.weight_unit === "kg") ? "kg" : "lbs";
+      const hVal = cmToDisp(obAns.height, hu);
+      const wVal = lbsToDisp(obAns.weight_lbs, wu);
+      const hCfg = hu === "in"
+        ? { min: "47", max: "87", step: "0.1", ph: "e.g. 65" }
+        : { min: "120", max: "220", step: "0.1", ph: "e.g. 166" };
+      const wCfg = wu === "kg"
+        ? { min: "32", max: "181", step: "0.1", ph: "e.g. 64" }
+        : { min: "70", max: "400", step: "0.1", ph: "e.g. 140" };
+      const unitBtns = (group, cur, a, b) =>
+        `<span class="ob-unit" role="group" aria-label="${group} unit">
+           <button type="button" class="ob-unit-opt ${cur === a ? "active" : ""}" data-unit="${group}" data-val="${a}">${a}</button>
+           <button type="button" class="ob-unit-opt ${cur === b ? "active" : ""}" data-unit="${group}" data-val="${b}">${b}</button>
+         </span>`;
       host.innerHTML = `<h3 class="ob-title">${s.title}</h3>${s.sub ? `<p class="ob-sub">${s.sub}</p>` : ""}
         <div class="ob-body">
-          <label class="ob-field"><span>Height</span>
-            <div class="ob-ipair"><input id="obHeight" type="number" inputmode="decimal" min="120" max="220" step="0.1" placeholder="e.g. 166" value="${cm != null ? cm : ""}"/><em>cm</em></div></label>
-          <label class="ob-field"><span>Weight</span>
-            <div class="ob-ipair"><input id="obWeight" type="number" inputmode="decimal" min="70" max="400" step="0.1" placeholder="e.g. 140" value="${lbs != null ? lbs : ""}"/><em>lbs</em></div></label>
+          <label class="ob-field"><span class="ob-field-head">Height ${unitBtns("height", hu, "cm", "in")}</span>
+            <div class="ob-ipair"><input id="obHeight" type="number" inputmode="decimal" min="${hCfg.min}" max="${hCfg.max}" step="${hCfg.step}" placeholder="${hCfg.ph}" value="${hVal != null ? hVal : ""}"/><em id="obHeightU">${hu}</em></div></label>
+          <label class="ob-field"><span class="ob-field-head">Weight ${unitBtns("weight", wu, "kg", "lbs")}</span>
+            <div class="ob-ipair"><input id="obWeight" type="number" inputmode="decimal" min="${wCfg.min}" max="${wCfg.max}" step="${wCfg.step}" placeholder="${wCfg.ph}" value="${wVal != null ? wVal : ""}"/><em id="obWeightU">${wu}</em></div></label>
         </div>
         <div class="ob-bmi hidden" id="obBmi"></div>
-        <p class="ob-validation hidden" id="obValidation">Please enter a valid height (cm) and weight (lbs).</p>`;
-      const onBody = () => {
-        const h = parseFloat($("#obHeight").value), w = parseFloat($("#obWeight").value);
-        obAns.height = isNaN(h) ? null : h;            // cm — stored as the engine expects
-        obAns.weight_lbs = isNaN(w) ? null : w;        // lbs — converted to kg in buildProfile
+        <p class="ob-validation hidden" id="obValidation">Please enter a valid height and weight.</p>`;
+      // Draw BMI from the CANONICAL values only (never mutates them) — used by both
+      // the initial render and after a unit switch, so switching units never nudges
+      // the stored measurement.
+      const drawBmi = () => {
         const bmi = bmiFrom(obAns.height, obAns.weight_lbs);
         const bmiEl = $("#obBmi");
         if (bmi != null) {
@@ -1070,11 +1096,35 @@
         } else {
           bmiEl.classList.add("hidden");
         }
-        persistOb(); updateObNextState();
       };
-      $("#obHeight").addEventListener("input", onBody);
-      $("#obWeight").addEventListener("input", onBody);
-      onBody();
+      // Per-field handlers: editing one field only rewrites THAT field's canonical
+      // (display value → cm / lbs), so editing weight never nudges height, and
+      // vice-versa.
+      const onHeight = () => {
+        const h = parseFloat($("#obHeight").value);
+        const cm = dispToCm(isNaN(h) ? null : h, hu);
+        obAns.height = cm != null ? round1(cm) : null;         // cm — engine canonical
+        drawBmi(); persistOb(); updateObNextState();
+      };
+      const onWeight = () => {
+        const w = parseFloat($("#obWeight").value);
+        const lbs = dispToLbs(isNaN(w) ? null : w, wu);
+        obAns.weight_lbs = lbs != null ? round1(lbs) : null;   // lbs — converted to kg in buildProfile
+        drawBmi(); persistOb(); updateObNextState();
+      };
+      $("#obHeight").addEventListener("input", onHeight);
+      $("#obWeight").addEventListener("input", onWeight);
+      // Unit switch: store the chosen display unit, keep the canonical value, and
+      // re-render so the input shows the SAME measurement in the new unit.
+      host.querySelectorAll(".ob-unit-opt").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const g = btn.getAttribute("data-unit"), v = btn.getAttribute("data-val");
+          if (g === "height") obAns.height_unit = v; else obAns.weight_unit = v;
+          persistOb();
+          obRender();   // canonical unchanged → value is preserved, just reconverted
+        });
+      });
+      drawBmi(); updateObNextState();   // derive from canonical WITHOUT rewriting it
     } else if (s.type === "single" || s.type === "multi") {
       const sel = obAns[s.key];
       host.innerHTML = `<h3 class="ob-title">${s.title}</h3>${s.sub ? `<p class="ob-sub">${s.sub}</p>` : ""}
