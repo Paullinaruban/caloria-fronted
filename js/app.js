@@ -2196,6 +2196,8 @@
     "salmon & greens salad": "assets/meals/salmon-greens-salad.jpg",
     "baked salmon & asparagus": "assets/meals/baked-salmon-asparagus.jpg",
     "tvorog breakfast bowl": "assets/meals/tvorog-breakfast-bowl.jpg",
+    "creamy chicken & broccoli pasta": "assets/meals/creamy-chicken-broccoli-pasta.jpg",
+    "apple crumble yogurt bowl": "assets/meals/apple-crumble-yogurt-bowl.jpg",
   };
   function foodPhoto(title) {
     const t = (title || "").toLowerCase();
