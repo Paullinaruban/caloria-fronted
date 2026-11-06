@@ -2198,6 +2198,7 @@
     "tvorog breakfast bowl": "assets/meals/tvorog-breakfast-bowl.jpg",
     "creamy chicken & broccoli pasta": "assets/meals/creamy-chicken-broccoli-pasta.jpg",
     "apple crumble yogurt bowl": "assets/meals/apple-crumble-yogurt-bowl.jpg",
+    "chicken soup": "assets/meals/chicken-soup.jpg",
   };
   function foodPhoto(title) {
     const t = (title || "").toLowerCase();
