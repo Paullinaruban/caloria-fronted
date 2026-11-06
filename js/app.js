@@ -1352,18 +1352,36 @@
     // without scrolling); the bottom nav button is hidden to avoid two CTAs.
     const next = $("#obNext"); next.classList.add("hidden");
     const join = $("#obJoinBtn");
-    if (join) join.addEventListener("click", startMembership);
+    // After the results, show the dedicated 3-day free-trial offer screen BEFORE
+    // handing off to sign-up — so every finisher is presented the trial, even if
+    // they never saw the 3-second popup. (The real trial is applied later by the
+    // Stripe checkout: subscription_data[trial_period_days], eligibility-gated.)
+    if (join) join.addEventListener("click", () => { obPhase = "membership"; persistOb(); obShow(); });
   }
 
   function renderMembershipScreen() {
-    $("#obStepBadge").textContent = "Caloria Club";
+    // Eligibility-aware: a brand-new (logged-out) finisher is always offered the
+    // 3-day free trial; a known user who already used it sees the paid copy, so we
+    // never promise a free trial the backend would refuse at checkout.
+    const trialOffer = (!user) || (user.trial_eligible !== false);
+    $("#obStepBadge").textContent = trialOffer ? "3 days free ✨" : "Caloria Club";
     $("#obBar").style.width = "100%";
     $("#obBack").style.visibility = "visible";
     $("#obStep").innerHTML = renderMembershipOffer();
-    const next = $("#obNext"); next.textContent = "Join Caloria Club 💗"; next.disabled = false;
+    const next = $("#obNext");
+    // The results screen hides obNext (its CTA is in-content); the trial offer uses
+    // the footer button as its primary CTA, so make sure it's visible again.
+    next.classList.remove("hidden");
+    next.textContent = trialOffer ? "Start My 3-Day Free Trial →" : "Join Caloria Club 💗";
+    next.disabled = false;
   }
   function renderMembershipOffer() {
-    // Features limited to what membership actually delivers — no fake urgency.
+    // Dedicated 3-day free-trial offer shown right after onboarding. Trial copy is
+    // eligibility-aware (mirrors applyPricing + billing.create_checkout) and the
+    // price comes from /api/config — the single pricing source. Features limited to
+    // what membership actually delivers — no fake urgency.
+    const trialOffer = (!user) || (user.trial_eligible !== false);
+    const price = (cfg && cfg.price_monthly) || "$19.99";
     const feats = [
       ["🍽️", "Personalized nutrition & meal plans", "Built around your calorie & macro targets."],
       ["🏋️", "Personalized workouts", "Training that matches your goal and level."],
@@ -1372,16 +1390,26 @@
       ["🏆", "Progress tracking", "See your streaks and transformation over time."],
       ["💬", "Private wellness community", "A circle of women on the same journey."],
     ];
-    return `
+    const head = trialOffer
+      ? `
+      <span class="pill pill-aqua trial-pill ob-ready">3 DAYS FREE</span>
+      <h3 class="ob-title">Start your 3-day free trial</h3>
+      <p class="ob-sub">Get full Premium access free for 3 days. After that it's ${esc(price)}/month — cancel anytime before your trial ends and you won't be charged.</p>`
+      : `
       <span class="pill pill-aqua ob-ready">Your transformation starts here</span>
       <h3 class="ob-title">Join Caloria Club</h3>
-      <p class="ob-sub">Turn your personalized plan into daily progress.</p>
+      <p class="ob-sub">Turn your personalized plan into daily progress.</p>`;
+    const foot = trialOffer
+      ? `<p class="ob-sub ob-unlock-foot">No payment today — your 3 free days start now. Cancel anytime 💗</p>`
+      : `<p class="ob-sub ob-unlock-foot">Choose your plan on the next step. Cancel anytime 💗</p>`;
+    return `
+      ${head}
       <div class="ob-unlock">
         ${feats.map(([e, title, sub]) => `
           <div class="ob-unlock-item"><span class="emo">${e}</span>
             <div><b>${esc(title)}</b><small>${esc(sub)}</small></div></div>`).join("")}
       </div>
-      <p class="ob-sub ob-unlock-foot">Choose your plan on the next step. Cancel anytime 💗</p>`;
+      ${foot}`;
   }
 
   // Phase 1b bridge: hand off to the EXISTING account + checkout flow with the
