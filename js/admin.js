@@ -653,8 +653,45 @@
   }
   $$('#tabs button').forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 
-  function showApp(on) { $("#loginCard").classList.toggle("hidden", on); $("#app").classList.toggle("hidden", !on); $("#logoutBtn").style.display = on ? "" : "none"; }
+  /* ---------- Cloudflare Turnstile on the admin login (mirrors the main app) ---------- */
+  let turnstileSiteKey = "", captchaToken = "", captchaWidgetId = null, turnstileLoading = false;
+  async function loadAdminConfig() {
+    // Public config endpoint — the same source app.js uses for the site key.
+    try { const c = await api("/api/config"); turnstileSiteKey = c.turnstile_site_key || ""; }
+    catch (_) { turnstileSiteKey = ""; }
+  }
+  function turnstileReady() { return !!turnstileSiteKey; }
+  function loadTurnstile() {
+    if (!turnstileReady() || window.turnstile || turnstileLoading) return;
+    turnstileLoading = true;
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=__cfAdminReady";
+    s.async = true; s.defer = true;
+    window.__cfAdminReady = () => renderCaptcha();
+    document.head.appendChild(s);
+  }
+  function renderCaptcha() {
+    if (!turnstileReady()) return;
+    const el = $("#adminCaptcha");
+    if (!el) return;
+    if (!window.turnstile) { loadTurnstile(); return; }
+    if (captchaWidgetId !== null) { try { window.turnstile.reset(captchaWidgetId); } catch (_) {} captchaToken = ""; return; }
+    captchaWidgetId = window.turnstile.render(el, {
+      sitekey: turnstileSiteKey,
+      callback: (t) => { captchaToken = t; },
+      "error-callback": () => { captchaToken = ""; },
+      "expired-callback": () => { captchaToken = ""; },
+    });
+  }
+  // Tokens are single-use: refresh after every attempt so a retry gets a fresh one.
+  function resetCaptcha() {
+    if (!turnstileReady() || !window.turnstile || captchaWidgetId === null) return;
+    try { window.turnstile.reset(captchaWidgetId); } catch (_) {}
+    captchaToken = "";
+  }
+  function showApp(on) { $("#loginCard").classList.toggle("hidden", on); $("#app").classList.toggle("hidden", !on); $("#logoutBtn").style.display = on ? "" : "none"; if (!on) renderCaptcha(); }
   async function boot() {
+    await loadAdminConfig();   // fetch the Turnstile site key before showing login
     if (!token) return showApp(false);
     try { await loadBusiness(); showApp(true); syncOv(); }
     catch (e) { token = null; localStorage.removeItem(TOKEN_KEY); showApp(false);
@@ -676,11 +713,18 @@
   $("#loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     $("#loginMsg").textContent = "";
+    // Require a solved Turnstile token before calling the API (same rule as app.js).
+    if (turnstileReady() && !captchaToken) {
+      $("#loginMsg").innerHTML = `<span class="msg err">Please complete the verification, then try again.</span>`;
+      return;
+    }
     const btn = $("#loginBtn");
     btn.disabled = true; btn.textContent = "One moment…";
     try {
       const path = loginMode === "signup" ? "/api/auth/signup" : "/api/auth/login";
-      const r = await api(path, { method: "POST", body: { email: $("#email").value.trim(), password: $("#password").value } });
+      const body = { email: $("#email").value.trim(), password: $("#password").value };
+      if (turnstileReady()) body.captcha_token = captchaToken;
+      const r = await api(path, { method: "POST", body });
       token = r.token; localStorage.setItem(TOKEN_KEY, token);
       await loadBusiness(); showApp(true); syncOv();
     } catch (e2) {
@@ -689,6 +733,7 @@
       else if (e2 instanceof TypeError || !e2.status) msg = "Can't reach the API server — check that the backend is running.";
       $("#loginMsg").innerHTML = `<span class="msg err">${esc(msg)}</span>`;
     }
+    resetCaptcha();   // refresh the single-use token for the next attempt
     btn.disabled = false;
     btn.textContent = loginMode === "login" ? "Sign in" : "Create account & sign in";
   });
