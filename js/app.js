@@ -381,46 +381,15 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !p.classList.contains("hidden")) ecDismiss();
     });
-    const form = $("#ecPopForm");
-    form && form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (ecSubmitting) return;
-      const el = $("#ecPopEmail"), err = $("#ecPopErr");
-      const email = el ? el.value.trim() : "";
-      const consentEl = $("#ecPopConsent");
-      const marketing_consent = !!(consentEl && consentEl.checked);
-      if (!validEmailSyntax(email)) { err.textContent = "Please enter a valid email address."; err.classList.remove("hidden"); return; }
-      err.classList.add("hidden");
-      ecSubmitting = true;
-      const btn = $("#ecPopBtn"), prev = btn.textContent; btn.disabled = true; btn.textContent = "One sec…";
-      try {
-        // Reuse the existing lead endpoint — saves the email only. NO account and
-        // NO trial is created here; the trial starts only at real Checkout. The
-        // consent box is EXPLICIT opt-in for the re-engagement email (unchecked
-        // by default — entering an email alone never grants marketing consent).
-        await api("/api/lead", { method: "POST", auth: false,
-          body: { email, marketing_consent, source: "popup" } });
-        // Success → guide into signup + free-trial checkout, email prefilled.
-        const inner = p.querySelector(".ec-pop");
-        inner.innerHTML =
-          '<button class="ec-pop-close" id="ecPopClose2" type="button" aria-label="Close">×</button>' +
-          '<img class="ec-pop-logo" src="/assets/logo-mascot.png?v=1" alt="Caloria" />' +
-          '<span class="pill pill-aqua trial-pill">3 DAYS FREE</span>' +
-          "<h3>You're in! 🤍</h3>" +
-          '<p class="ec-pop-sub">Let\'s set up your 3-day free trial — it only takes a minute.</p>' +
-          '<button class="btn btn-glow btn-block btn-lg" id="ecPopGo" type="button">Continue →</button>' +
-          '<p class="ec-pop-fine">No payment today. Cancel anytime.</p>';
-        $("#ecPopClose2") && $("#ecPopClose2").addEventListener("click", ecDismiss);
-        $("#ecPopGo") && $("#ecPopGo").addEventListener("click", () => {
-          ecDismiss();
-          openAuth("signup");
-          const em = $("#authEmail"); if (em) em.value = email;   // existing-account case is handled by signup (409 → log in)
-        });
-      } catch (e2) {
-        err.textContent = (e2 && e2.message) ? e2.message : "Something went wrong. Please try again.";
-        err.classList.remove("hidden");
-        btn.disabled = false; btn.textContent = prev; ecSubmitting = false;
-      }
+    // CTA → start the EXACT same 7-question onboarding flow the main "Join The
+    // Club" buttons use. startJoinFlow() loads/resumes answers, shows the
+    // questionnaire, and ends at results → membership → registration → Stripe
+    // checkout — one shared flow, one shared logic path. No email is collected
+    // here; the email is taken later at registration, same as the main button.
+    const joinBtn = $("#ecPopJoin");
+    joinBtn && joinBtn.addEventListener("click", () => {
+      ecDismiss();          // close the popup + mark dismissed for this session
+      startJoinFlow();      // identical entry point to every "Join The Club" CTA
     });
     // Trigger ~3s after the visitor lands, if still eligible.
     setTimeout(ecShow, 3000);
@@ -953,6 +922,7 @@
         obAns = v.ans;
         obIndex = Math.min(Math.max(0, v.i | 0), OB_STEPS.length - 1);
         obPhase = v.phase || "questions";
+        if (obPhase === "email") obPhase = "questions";   // email-capture step removed from the funnel
         obLeadId = v.lead || null;
         obLeadEmail = v.email || "";
       }
@@ -1008,7 +978,6 @@
   // Master dispatcher: the single #obStep host shows either a question or one of
   // the post-assessment screens (email -> results -> membership).
   function obShow() {
-    if (obPhase === "email") return renderEmailCapture();
     if (obPhase === "results") return renderResultsScreen();
     if (obPhase === "membership") return renderMembershipScreen();
     obRender();
@@ -1178,8 +1147,8 @@
           <div><b>${t.fat || "—"}g</b><span>Fat</span></div>
         </div>
       </div>
-      <button type="button" id="obJoinBtn" class="btn btn-glow btn-block btn-lg ob-join-cta">Join Caloria Club 💗</button>
-      <p class="ob-join-note">Cancel anytime.</p>
+      <button type="button" id="obJoinBtn" class="btn btn-glow btn-block btn-lg ob-join-cta">JOIN CALORIA CLUB</button>
+      <p class="ob-join-note">Unlock your personalized wellness journey and start your 3-day free trial.</p>
       <p class="ob-unlock-head">Everything you unlock when you join 👇</p>
       <div class="ob-unlock">
         ${unlocks.map(([e, title, sub]) => `
@@ -1208,8 +1177,7 @@
   function updateObNextState() {
     const next = $("#obNext"); if (!next) return;
     let ok;
-    if (obPhase === "email") { const el = $("#obEmail"); ok = !!el && validEmailSyntax(el.value.trim()); }
-    else if (obPhase === "results" || obPhase === "membership") ok = true;
+    if (obPhase === "results" || obPhase === "membership") ok = true;
     else ok = isStepAnswered(OB_STEPS[obIndex]);
     next.disabled = !ok;
   }
@@ -1344,6 +1312,11 @@
   }
 
   function renderResultsScreen() {
+    // Safety: if we resumed straight onto results without targets (e.g. a page
+    // reload), recompute them from the saved answers so the plan never shows blanks.
+    if (!token && !obPreviewTargets) {
+      obSubmitProfile().then(() => { if (obPhase === "results") renderResultsScreen(); }).catch(() => {});
+    }
     $("#obStepBadge").textContent = "Your results ✨";
     $("#obBar").style.width = "100%";
     $("#obBack").style.visibility = "visible";
@@ -1424,20 +1397,32 @@
 
   $("#obBack").addEventListener("click", () => {
     if (obPhase === "membership") { obPhase = "results"; persistOb(); obShow(); return; }
-    if (obPhase === "results") { obPhase = "email"; persistOb(); obShow(); return; }
-    if (obPhase === "email") { obPhase = "questions"; persistOb(); obShow(); return; }
+    if (obPhase === "results") { obPhase = "questions"; persistOb(); obShow(); return; }
     if (obIndex > 0) { obIndex--; persistOb(); obRender(); }
   });
   $("#obNext").addEventListener("click", async () => {
     if ($("#obNext").disabled) return;                 // hard gate: never advance unanswered
-    if (obPhase === "email") return submitEmailPhase();
     if (obPhase === "results") { obPhase = "membership"; persistOb(); obShow(); return; }
     if (obPhase === "membership") return startMembership();
     // questions phase
     const s = OB_STEPS[obIndex];
     if (!isStepAnswered(s)) { const v = $("#obValidation"); if (v) v.classList.remove("hidden"); return; }
     if (obIndex < OB_STEPS.length - 1) { obIndex++; persistOb(); obRender(); }
-    else { obPhase = "email"; persistOb(); obShow(); }   // after Q7 → email capture
+    else {
+      // After the final question → compute personalized targets, then show the
+      // results IMMEDIATELY (the email-capture step has been removed). Answers are
+      // still attached to the account after sign-up + verification, unchanged.
+      const btn = $("#obNext");
+      btn.disabled = true; const prevLabel = btn.textContent; btn.textContent = "Building your plan…";
+      try {
+        if (!obSubmitted || !obPreviewTargets) await obSubmitProfile();
+        obPhase = "results"; persistOb(); obShow();
+      } catch (err) {
+        btn.disabled = false; btn.textContent = prevLabel || "Continue";
+        const v = $("#obValidation");
+        if (v) { v.textContent = (err && err.message) || "Couldn't build your plan — please try again."; v.classList.remove("hidden"); }
+      }
+    }
   });
   obReset();
 

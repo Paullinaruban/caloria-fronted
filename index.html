@@ -220,10 +220,12 @@
           <div class="cur-row cur-row-center">
             <select class="cur-select" aria-label="Currency"></select>
           </div>
+          <span class="pill pill-aqua trial-pill" style="align-self:flex-start;margin:2px 0 8px">3 DAYS FREE</span>
           <div class="plan-price">
             <span class="pp-compare" id="priceCompare">$25</span>
             <span class="pp-amt" id="priceAmt">$19.99</span><span class="pp-per" id="pricePer">/month</span>
           </div>
+          <p class="pp-trial-note trial-line" style="font-weight:700;margin:2px 0 6px">Start your wellness journey with 3 days free. Cancel anytime.</p>
           <p class="pp-note" id="priceNote">Billed monthly · cancel anytime</p>
           <ul class="plan-feats">
             <li>✓ <b>Unlimited</b> food scans</li>
@@ -233,7 +235,7 @@
             <li>✓ Progress tracking &amp; macro coaching</li>
             <li>✓ Shopping lists &amp; premium recipes</li>
           </ul>
-          <button class="btn btn-primary" id="pricingUpgradeBtn" data-auth="signup">Join The Club</button>
+          <button class="btn btn-primary" id="pricingUpgradeBtn" data-auth="signup">Start your 3-day free trial</button>
         </div>
       </div>
     </section>
@@ -474,7 +476,7 @@
     </div>
   </div>
 
-  <!-- ============== EMAIL-CAPTURE POPUP (new visitors, after ~3s) ============== -->
+  <!-- ============== 3-SECOND JOIN POPUP (new visitors, after ~3s) ============== -->
   <div class="ec-pop-overlay hidden" id="ecPop" role="dialog" aria-modal="true" aria-labelledby="ecPopTitle">
     <div class="ec-pop glass-strong">
       <button class="ec-pop-close" id="ecPopClose" type="button" aria-label="Close">×</button>
@@ -482,13 +484,7 @@
       <span class="pill pill-aqua trial-pill">3 DAYS FREE</span>
       <h3 id="ecPopTitle">Your 3-day glow-up starts here.</h3>
       <p class="ec-pop-sub">Join Caloria Club and get 3 days of full Premium access on us.</p>
-      <form id="ecPopForm" novalidate>
-        <input id="ecPopEmail" type="email" inputmode="email" autocomplete="email" placeholder="Enter your email address" />
-        <label class="ec-pop-consent"><input type="checkbox" id="ecPopConsent" />
-          <span>Send me wellness tips &amp; reminders by email. Unsubscribe anytime.</span></label>
-        <button class="btn btn-glow btn-block btn-lg" type="submit" id="ecPopBtn">Unlock My 3 Free Days</button>
-      </form>
-      <p class="ec-pop-err hidden" id="ecPopErr"></p>
+      <button class="btn btn-glow btn-block btn-lg" type="button" id="ecPopJoin">JOIN WITH 3 DAYS FREE TRIAL</button>
       <p class="ec-pop-fine">No payment today. Cancel anytime.</p>
     </div>
   </div>
@@ -1120,6 +1116,6 @@
        the PUBLIC (logged-out) landing too, not just the logged-in app. -->
   <script src="js/seasonal.js?v=2"></script>
   <script src="js/winter.js?v=2"></script>
-  <script src="js/app.js?v=68"></script>
+  <script src="js/app.js?v=70"></script>
 </body>
 </html>
