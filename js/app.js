@@ -296,6 +296,16 @@
     const q   = cfg.price_quarterly || "$50";               // 3-month plan
     const m   = cfg.price_monthly || "$19.99";              // emphasized price
     const cmp = cfg.price_monthly_compare || "$25";         // struck-through "was" price
+    // Homepage pricing: THREE cards shown at once (no toggle). Populate each from the
+    // single pricing source. (The legacy single-card #priceAmt/#pricePer/#priceNote
+    // elements were removed; their guarded setters below simply no-op.)
+    const _set = (id, t) => { const el = $("#" + id); if (el) el.textContent = t; };
+    _set("pmCompare", cmp); _set("pmAmt", m); _set("pmPer", "/month");
+    _set("pmNote", "Billed monthly · cancel anytime");
+    _set("pqAmt", q); _set("pqPer", "/3 months");
+    _set("pqNote", "Billed every 3 months · cancel anytime");
+    _set("pyAmt", y); _set("pyPer", "/year");
+    _set("pyNote", "Billed yearly · best value");
     const amt = billingInterval === "monthly" ? m : (billingInterval === "quarterly" ? q : y);
     const per = billingInterval === "monthly" ? "/month" : (billingInterval === "quarterly" ? "/3 months" : "/year");
     const note = billingInterval === "monthly" ? "Billed monthly · cancel anytime"
@@ -328,7 +338,12 @@
     // subscribed) must NEVER be promised a free trial. Logged-out visitors are
     // treated as eligible (brand-new). Source of truth: user.trial_eligible from
     // /api/me (auth.trial_eligible ↔ billing.create_checkout enforce the same rule).
-    const trialOffer = (!user) || (user.trial_eligible !== false);
+    // ALSO suppress the trial for a Lucky-Wheel participant: a stored won offer makes
+    // checkout take the promo (no-trial) path at the backend, so promising "3 DAYS
+    // FREE" here would be misleading. Backend stays the source of truth — this only
+    // keeps the UI honest; it cannot grant a trial the backend would withhold.
+    const wheelParticipant = !!readWheelRedemption();
+    const trialOffer = !wheelParticipant && ((!user) || (user.trial_eligible !== false));
     const paidLabel = (billingInterval === "yearly")
       ? ("Subscribe — " + y + "/year")
       : (billingInterval === "quarterly"
@@ -347,6 +362,10 @@
       $("#sgCheckout") && ($("#sgCheckout").textContent = "Start My 3-Day Free Trial →");
       $("#sgNote") && ($("#sgNote").textContent = trialNote);
       $$(".trial-pill, .trial-line").forEach((el) => (el.style.display = ""));
+      // Homepage three cards — eligible visitor sees the free-trial CTA on each.
+      _set("pmBtn", "Start your 3-day free trial");
+      _set("pqBtn", "Start your 3-day free trial");
+      _set("pyBtn", "Start your 3-day free trial");
     } else {
       $("#paywallTrial") && ($("#paywallTrial").style.display = "none");
       $("#paywallTitle") && ($("#paywallTitle").textContent = "Subscribe to Caloria Premium");
@@ -358,6 +377,10 @@
       $("#sgCheckout") && ($("#sgCheckout").textContent = paidLabel);
       $("#sgNote") && ($("#sgNote").textContent = paidNote);
       $$(".trial-pill, .trial-line").forEach((el) => (el.style.display = "none"));
+      // Homepage three cards — ineligible visitor sees immediate-payment CTA per plan.
+      _set("pmBtn", "Subscribe — " + m + "/month");
+      _set("pqBtn", "Subscribe — " + q + "/3 months");
+      _set("pyBtn", "Subscribe — " + y + "/year");
     }
   }
 
@@ -430,6 +453,14 @@
       })
     );
   });
+
+  // Homepage pricing cards (no toggle): each "Subscribe / Start trial" button sets
+  // the chosen interval before the data-auth="signup" handler opens the join flow,
+  // so the plan the visitor clicked carries through to checkout. Backend remains the
+  // source of truth for trial eligibility and for the Lucky-Wheel no-trial rule.
+  $$(".pp-plan-btn").forEach((b) =>
+    b.addEventListener("click", () => { billingInterval = b.dataset.interval || billingInterval; })
+  );
 
   /* ===================== auth modal ===================== */
   // Password visibility toggles (Sign in / Sign up / Reset). Swaps the input

@@ -34,7 +34,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
 
   <link rel="stylesheet" href="css/fonts.css" />
-  <link rel="stylesheet" href="css/styles.css?v=51" />
+  <link rel="stylesheet" href="css/styles.css?v=53" />
   <link rel="stylesheet" href="css/winter.css?v=2" />
   <!-- Native (Capacitor) refinements — inert on the web -->
   <link rel="stylesheet" href="css/native.css?v=1" />
@@ -208,26 +208,25 @@
       <h2 class="section-title">Simple, premium pricing</h2>
       <p class="section-sub">One membership unlocks the entire platform — nutrition, training, coaching &amp; community.</p>
 
-      <div class="bill-toggle">
-        <button class="bt-opt active" data-interval="monthly">Monthly</button>
-        <button class="bt-opt" data-interval="quarterly">3 Months</button>
-        <button class="bt-opt" data-interval="yearly">Yearly <span class="save">save 45%</span></button>
+      <div class="cur-row cur-row-center" style="margin-top:18px">
+        <select class="cur-select" aria-label="Currency"></select>
       </div>
 
-      <div class="plans">
+      <!-- All three plans shown at once (no toggle). Same Premium membership, three
+           billing intervals. Trial pills/notes carry class trial-pill/trial-line so
+           applyPricing() shows them only to trial-eligible visitors. -->
+      <div class="plans plans-3">
+        <!-- Monthly (highlighted — most popular) -->
         <div class="plan plan-premium glass-strong">
-          <span class="plan-badge">Most popular</span>
-          <h3>Premium</h3>
-          <div class="cur-row cur-row-center">
-            <select class="cur-select" aria-label="Currency"></select>
-          </div>
+          <span class="plan-badge popular">MOST POPULAR</span>
+          <h3>Monthly</h3>
           <span class="pill pill-aqua trial-pill" style="align-self:flex-start;margin:2px 0 8px">3 DAYS FREE</span>
           <div class="plan-price">
-            <span class="pp-compare" id="priceCompare">$25</span>
-            <span class="pp-amt" id="priceAmt">$19.99</span><span class="pp-per" id="pricePer">/month</span>
+            <span class="pp-compare" id="pmCompare">$25</span>
+            <span class="pp-amt" id="pmAmt">$19.99</span><span class="pp-per" id="pmPer">/month</span>
           </div>
-          <p class="pp-trial-note trial-line" style="font-weight:700;margin:2px 0 6px">Start your wellness journey with 3 days free. Cancel anytime.</p>
-          <p class="pp-note" id="priceNote">Billed monthly · cancel anytime</p>
+          <p class="pp-trial-note trial-line" style="font-weight:700;margin:2px 0 6px">Start with 3 days free. Cancel anytime.</p>
+          <p class="pp-note" id="pmNote">Billed monthly · cancel anytime</p>
           <ul class="plan-feats">
             <li>✓ <b>Unlimited</b> food scans</li>
             <li>✓ Advanced 7-nutrient analysis</li>
@@ -236,7 +235,47 @@
             <li>✓ Progress tracking &amp; macro coaching</li>
             <li>✓ Shopping lists &amp; premium recipes</li>
           </ul>
-          <button class="btn btn-primary" id="pricingUpgradeBtn" data-auth="signup">Start your 3-day free trial</button>
+          <button class="btn btn-primary pp-plan-btn" id="pmBtn" data-interval="monthly" data-auth="signup">Start your 3-day free trial</button>
+        </div>
+
+        <!-- 3 Months -->
+        <div class="plan glass-strong">
+          <h3>3 Months</h3>
+          <span class="pill pill-aqua trial-pill" style="align-self:flex-start;margin:2px 0 8px">3 DAYS FREE</span>
+          <div class="plan-price">
+            <span class="pp-amt" id="pqAmt">$50</span><span class="pp-per" id="pqPer">/3 months</span>
+          </div>
+          <p class="pp-trial-note trial-line" style="font-weight:700;margin:2px 0 6px">Start with 3 days free. Cancel anytime.</p>
+          <p class="pp-note" id="pqNote">Billed every 3 months · cancel anytime</p>
+          <ul class="plan-feats">
+            <li>✓ <b>Unlimited</b> food scans</li>
+            <li>✓ Advanced 7-nutrient analysis</li>
+            <li>✓ Personalized meal plans + diet modes</li>
+            <li>✓ Meal replacements &amp; regeneration</li>
+            <li>✓ Progress tracking &amp; macro coaching</li>
+            <li>✓ Shopping lists &amp; premium recipes</li>
+          </ul>
+          <button class="btn btn-primary pp-plan-btn" id="pqBtn" data-interval="quarterly" data-auth="signup">Start your 3-day free trial</button>
+        </div>
+
+        <!-- Yearly -->
+        <div class="plan glass-strong">
+          <h3>Yearly</h3>
+          <span class="pill pill-aqua trial-pill" style="align-self:flex-start;margin:2px 0 8px">3 DAYS FREE</span>
+          <div class="plan-price">
+            <span class="pp-amt" id="pyAmt">$125</span><span class="pp-per" id="pyPer">/year</span>
+          </div>
+          <p class="pp-trial-note trial-line" style="font-weight:700;margin:2px 0 6px">Start with 3 days free. Cancel anytime.</p>
+          <p class="pp-note" id="pyNote">Billed yearly · best value</p>
+          <ul class="plan-feats">
+            <li>✓ <b>Unlimited</b> food scans</li>
+            <li>✓ Advanced 7-nutrient analysis</li>
+            <li>✓ Personalized meal plans + diet modes</li>
+            <li>✓ Meal replacements &amp; regeneration</li>
+            <li>✓ Progress tracking &amp; macro coaching</li>
+            <li>✓ Shopping lists &amp; premium recipes</li>
+          </ul>
+          <button class="btn btn-primary pp-plan-btn" id="pyBtn" data-interval="yearly" data-auth="signup">Start your 3-day free trial</button>
         </div>
       </div>
     </section>
@@ -1139,7 +1178,7 @@
        the PUBLIC (logged-out) landing too, not just the logged-in app. -->
   <script src="js/seasonal.js?v=2"></script>
   <script src="js/winter.js?v=2"></script>
-  <script src="js/app.js?v=71"></script>
+  <script src="js/app.js?v=72"></script>
   <script src="js/wheel.js?v=1"></script>
 </body>
 </html>
