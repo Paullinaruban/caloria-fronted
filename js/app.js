@@ -9,8 +9,10 @@
 
   let token = localStorage.getItem(TOKEN_KEY) || null;
   let user = null;
-  let cfg = { price_monthly: "$19.99", price_yearly: "$99", price_monthly_compare: "$25",
-              price_monthly_usd: 19, price_yearly_usd: 99, price_monthly_compare_usd: 25,
+  let cfg = { price_monthly: "$19.99", price_yearly: "$125", price_quarterly: "$50",
+              price_monthly_compare: "$25",
+              price_monthly_usd: 19.99, price_yearly_usd: 125, price_quarterly_usd: 50,
+              price_monthly_compare_usd: 25,
               stripe_configured: false, images_enabled: false, trial_days: 0 };
   let billingInterval = "monthly";
 
@@ -203,9 +205,11 @@
   // YEARLY_PRICE_USD — the same value Stripe's Price is minted from). Never a
   // hardcoded pixel constant.
   function planValue(interval) {
-    // Only two plans exist: yearly ($99) and monthly ($19.99). Anything else
-    // (e.g. a legacy value) falls back to the monthly price.
-    return interval === "yearly" ? (cfg.price_yearly_usd || 99) : (cfg.price_monthly_usd || 19.99);
+    // Pixel value only (analytics, not billing). Plans: yearly ($125), quarterly
+    // ($50/3mo), monthly ($19.99). Unknown intervals fall back to the monthly price.
+    if (interval === "yearly") return cfg.price_yearly_usd || 125;
+    if (interval === "quarterly") return cfg.price_quarterly_usd || 50;
+    return cfg.price_monthly_usd || 19.99;
   }
   // Fire the Meta 'Purchase' event — ONLY from a confirmed, paid activation.
   // Reads the plan chosen at checkout (persisted across the Stripe redirect) so
@@ -288,12 +292,17 @@
   // Values come from /api/config (the backend single source of truth); the
   // literals here are only fallbacks used until that request returns.
   function applyPricing() {
-    const y   = cfg.price_yearly || "$99";
+    const y   = cfg.price_yearly || "$125";
+    const q   = cfg.price_quarterly || "$50";               // 3-month plan
     const m   = cfg.price_monthly || "$19.99";              // emphasized price
     const cmp = cfg.price_monthly_compare || "$25";         // struck-through "was" price
-    $("#priceAmt") && ($("#priceAmt").textContent = billingInterval === "monthly" ? m : y);
-    $("#pricePer") && ($("#pricePer").textContent = billingInterval === "monthly" ? "/month" : "/year");
-    $("#priceNote") && ($("#priceNote").textContent = billingInterval === "monthly" ? "Billed monthly · cancel anytime" : "Billed yearly · best value");
+    const amt = billingInterval === "monthly" ? m : (billingInterval === "quarterly" ? q : y);
+    const per = billingInterval === "monthly" ? "/month" : (billingInterval === "quarterly" ? "/3 months" : "/year");
+    const note = billingInterval === "monthly" ? "Billed monthly · cancel anytime"
+      : (billingInterval === "quarterly" ? "Billed every 3 months · cancel anytime" : "Billed yearly · best value");
+    $("#priceAmt") && ($("#priceAmt").textContent = amt);
+    $("#pricePer") && ($("#pricePer").textContent = per);
+    $("#priceNote") && ($("#priceNote").textContent = note);
     // Struck-through anchor price — always shown on the monthly view.
     const cmpEl = $("#priceCompare");
     if (cmpEl) {
@@ -312,6 +321,8 @@
     $("#upYearly") && ($("#upYearly").textContent = y);
     $("#pwYearly") && ($("#pwYearly").textContent = y);
     $("#sgYearly") && ($("#sgYearly").textContent = y);
+    // 3-month plan label in any toggle that offers it.
+    ["upQuarterly", "pwQuarterly", "sgQuarterly"].forEach((id) => { const el = $("#" + id); if (el) el.textContent = q; });
     // Trial copy is shown ONLY to trial-eligible visitors. A logged-in user whom
     // the backend will charge immediately (already used a trial, or ever
     // subscribed) must NEVER be promised a free trial. Logged-out visitors are
@@ -319,8 +330,10 @@
     // /api/me (auth.trial_eligible ↔ billing.create_checkout enforce the same rule).
     const trialOffer = (!user) || (user.trial_eligible !== false);
     const paidLabel = (billingInterval === "yearly")
-      ? ("Subscribe — " + (cfg.price_yearly || "$99") + "/year")
-      : ("Subscribe — " + m + "/month");
+      ? ("Subscribe — " + y + "/year")
+      : (billingInterval === "quarterly"
+          ? ("Subscribe — " + q + "/3 months")
+          : ("Subscribe — " + m + "/month"));
     const trialNote = "Your subscription starts with 3 free days. After that, your selected plan renews automatically at the displayed price unless you cancel before the trial ends.";
     const paidNote  = "You've already used your free trial, so your plan starts today at the price shown. Cancel anytime.";
     if (trialOffer) {
@@ -349,9 +362,10 @@
   }
 
   // The Caloria Starter entry plan is RETIRED — it is no longer offered anywhere in
-  // the customer-facing experience. Pricing is exactly two options: $19.99/mo and
-  // $99/yr. (Existing Starter subscribers keep their access + "Starter" account
-  // label via their own plan flag; nothing here affects that or their billing.)
+  // the customer-facing experience. Standard pricing is $19.99/mo, $50/3mo and
+  // $125/yr (plus Lucky Wheel promo discounts). (Existing Starter subscribers keep
+  // their access + "Starter" account label via their own plan flag; nothing here
+  // affects that or their billing.)
 
   /* ---------- 3-second email-capture popup (new visitors only) ---------- */
   const EC_DISMISS = "caloria.ecpop.dismissed";
@@ -391,8 +405,12 @@
       ecDismiss();          // close the popup + mark dismissed for this session
       startJoinFlow();      // identical entry point to every "Join The Club" CTA
     });
-    // Trigger ~3s after the visitor lands, if still eligible.
-    setTimeout(ecShow, 3000);
+    // The Lucky Wheel (js/wheel.js) is now the new-visitor popup, so this legacy
+    // 3-second popup no longer auto-opens. The markup + wiring are kept dormant
+    // (nothing triggers ecShow) so it can be re-enabled by a one-line change if the
+    // wheel is ever turned off. The regular 3-day trial is still reachable through
+    // the normal pricing / subscription-gate flow.
+    // setTimeout(ecShow, 3000);   // disabled — replaced by the Lucky Wheel popup
   }
 
   // Currency is handled entirely by Stripe Adaptive Pricing at checkout — no
@@ -968,6 +986,27 @@
     obShow();
     showView("onboard");
   }
+  // Exposed so the separate Lucky Wheel module (js/wheel.js) can hand off into the
+  // EXACT same onboarding → registration → checkout flow after a visitor claims a
+  // won offer — no duplicate funnel.
+  window.caloriaStartJoin = startJoinFlow;
+
+  // ---- Lucky Wheel promotional offer (set by js/wheel.js on a win) ----------
+  const WHEEL_STORE = "caloria.wheel.v1";
+  function readWheelRedemption() {
+    // Returns the stored won offer {redemption_id, prize, interval, promo_price,
+    // regular_price, renewal_terms, ...} or null. Ignored once logged-in users have
+    // their own entitlement, but harmless to read.
+    try {
+      const raw = localStorage.getItem(WHEEL_STORE);
+      if (!raw) return null;
+      const o = JSON.parse(raw);
+      return (o && o.redemption_id && o.prize) ? o : null;
+    } catch (_) { return null; }
+  }
+  function clearWheelRedemption() {
+    try { localStorage.removeItem(WHEEL_STORE); } catch (_) {}
+  }
 
   function obReset() {
     obIndex = 0; obAns = {}; obSubmitted = false; obPreviewTargets = null;
@@ -1148,7 +1187,7 @@
         </div>
       </div>
       <button type="button" id="obJoinBtn" class="btn btn-glow btn-block btn-lg ob-join-cta">JOIN CALORIA CLUB</button>
-      <p class="ob-join-note">Unlock your personalized wellness journey and start your 3-day free trial.</p>
+      <p class="ob-join-note">${readWheelRedemption() ? "Claim your exclusive offer and unlock your personalized wellness journey." : "Unlock your personalized wellness journey and start your 3-day free trial."}</p>
       <p class="ob-unlock-head">Everything you unlock when you join 👇</p>
       <div class="ob-unlock">
         ${unlocks.map(([e, title, sub]) => `
@@ -1336,16 +1375,19 @@
     // Eligibility-aware: a brand-new (logged-out) finisher is always offered the
     // 3-day free trial; a known user who already used it sees the paid copy, so we
     // never promise a free trial the backend would refuse at checkout.
-    const trialOffer = (!user) || (user.trial_eligible !== false);
-    $("#obStepBadge").textContent = trialOffer ? "3 days free ✨" : "Caloria Club";
+    const wheelO = readWheelRedemption();
+    const trialOffer = !wheelO && ((!user) || (user.trial_eligible !== false));
+    $("#obStepBadge").textContent = wheelO ? "Your offer 🎀"
+      : (trialOffer ? "3 days free ✨" : "Caloria Club");
     $("#obBar").style.width = "100%";
     $("#obBack").style.visibility = "visible";
     $("#obStep").innerHTML = renderMembershipOffer();
     const next = $("#obNext");
-    // The results screen hides obNext (its CTA is in-content); the trial offer uses
+    // The results screen hides obNext (its CTA is in-content); the trial/offer uses
     // the footer button as its primary CTA, so make sure it's visible again.
     next.classList.remove("hidden");
-    next.textContent = trialOffer ? "Start My 3-Day Free Trial →" : "Join Caloria Club 💗";
+    next.textContent = wheelO ? "Claim my offer →"
+      : (trialOffer ? "Start My 3-Day Free Trial →" : "Join Caloria Club 💗");
     next.disabled = false;
   }
   function renderMembershipOffer() {
@@ -1353,7 +1395,8 @@
     // eligibility-aware (mirrors applyPricing + billing.create_checkout) and the
     // price comes from /api/config — the single pricing source. Features limited to
     // what membership actually delivers — no fake urgency.
-    const trialOffer = (!user) || (user.trial_eligible !== false);
+    const wheelO = readWheelRedemption();
+    const trialOffer = !wheelO && ((!user) || (user.trial_eligible !== false));
     const price = (cfg && cfg.price_monthly) || "$19.99";
     const feats = [
       ["🍽️", "Personalized nutrition & meal plans", "Built around your calorie & macro targets."],
@@ -1363,18 +1406,28 @@
       ["🏆", "Progress tracking", "See your streaks and transformation over time."],
       ["💬", "Private wellness community", "A circle of women on the same journey."],
     ];
-    const head = trialOffer
-      ? `
+    let head, foot;
+    if (wheelO) {
+      // Lucky Wheel winner — show the exact won offer (promo price → regular
+      // renewal, no free trial). Prices/terms come from the backend spin response.
+      head = `
+      <span class="pill pill-aqua ob-ready">🎀 Your exclusive offer</span>
+      <h3 class="ob-title">${esc(wheelO.promo_price || "")} ${esc(wheelO.offer_label || "")}</h3>
+      <p class="ob-sub"><s>${esc(wheelO.regular_price || "")}</s> <b>${esc(wheelO.promo_price || "")}</b> — ${esc(wheelO.renewal_terms || "Cancel anytime.")}</p>`;
+      foot = `<p class="ob-sub ob-unlock-foot">Create your account on the next step to claim it 💗</p>`;
+    } else if (trialOffer) {
+      head = `
       <span class="pill pill-aqua trial-pill ob-ready">3 DAYS FREE</span>
       <h3 class="ob-title">Start your 3-day free trial</h3>
-      <p class="ob-sub">Get full Premium access free for 3 days. After that it's ${esc(price)}/month — cancel anytime before your trial ends and you won't be charged.</p>`
-      : `
+      <p class="ob-sub">Get full Premium access free for 3 days. After that it's ${esc(price)}/month — cancel anytime before your trial ends and you won't be charged.</p>`;
+      foot = `<p class="ob-sub ob-unlock-foot">No payment today — your 3 free days start now. Cancel anytime 💗</p>`;
+    } else {
+      head = `
       <span class="pill pill-aqua ob-ready">Your transformation starts here</span>
       <h3 class="ob-title">Join Caloria Club</h3>
       <p class="ob-sub">Turn your personalized plan into daily progress.</p>`;
-    const foot = trialOffer
-      ? `<p class="ob-sub ob-unlock-foot">No payment today — your 3 free days start now. Cancel anytime 💗</p>`
-      : `<p class="ob-sub ob-unlock-foot">Choose your plan on the next step. Cancel anytime 💗</p>`;
+      foot = `<p class="ob-sub ob-unlock-foot">Choose your plan on the next step. Cancel anytime 💗</p>`;
+    }
     return `
       ${head}
       <div class="ob-unlock">
@@ -2519,8 +2572,13 @@
   async function startCheckout(btn, overrideInterval) {
     if (checkoutInFlight) return;
     checkoutInFlight = true;
-    // Two plans only: monthly ($19.99) or yearly ($99) — the chosen interval.
-    const interval = overrideInterval || billingInterval;
+    // Lucky Wheel: if the visitor won a promotional offer, force the WON plan and
+    // attach the redemption id so the backend applies the one-time discount (and no
+    // trial). The backend RE-VALIDATES it; if it's no longer valid it returns
+    // promo_invalid and we transparently retry at the regular price.
+    const wheelPromo = readWheelRedemption();
+    const interval = overrideInterval || (wheelPromo && wheelPromo.prize) || billingInterval;
+    const redemptionId = (!overrideInterval && wheelPromo) ? wheelPromo.redemption_id : null;
     if (btn) { btn.disabled = true; btn.dataset.prev = btn.textContent; btn.textContent = "Opening secure checkout…"; }
     const note = $("#sgNote"); if (note) note.classList.remove("checkout-error");
     const reenable = () => { checkoutInFlight = false; if (btn) { btn.disabled = false; if (btn.dataset.prev) btn.textContent = btn.dataset.prev; } };
@@ -2566,13 +2624,26 @@
     } catch (_) {}
 
     try {
-      const res = await api("/api/billing/checkout", { method: "POST", body: { interval } });
+      const body = redemptionId ? { interval, redemption_id: redemptionId } : { interval };
+      const res = await api("/api/billing/checkout", { method: "POST", body });
       // On success we navigate away — deliberately leave the button disabled and the
       // in-flight lock set so nothing can fire a second request during the redirect.
       if (res && res.url) { window.location.href = res.url; return; }
       checkoutError("Couldn't start checkout — please try again in a moment.");
       reenable();
     } catch (err) {
+      // The won offer is no longer valid (expired / already used / not a new
+      // customer): drop it and retry once at the regular price so the sale isn't lost.
+      if (err && err.data && err.data.promo_invalid) {
+        clearWheelRedemption();
+        try {
+          const res2 = await api("/api/billing/checkout", {
+            method: "POST", body: { interval: overrideInterval || billingInterval } });
+          if (res2 && res2.url) { window.location.href = res2.url; return; }
+        } catch (_) {}
+        checkoutError("That offer has expired — please choose a plan to continue.");
+        reenable(); return;
+      }
       if (err && err.status === 403) { reenable(); if (user) openVerify(user.email); return; }   // needs verification
       if (err && /not configured/i.test(err.message || "")) checkoutError("Payments aren't live yet. Please try again shortly.");
       else if (err && (err.message === "Failed to fetch" || err.name === "TypeError")) checkoutError("Couldn't reach the payment server. Check your connection and try again.");

@@ -34,7 +34,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
 
   <link rel="stylesheet" href="css/fonts.css" />
-  <link rel="stylesheet" href="css/styles.css?v=50" />
+  <link rel="stylesheet" href="css/styles.css?v=51" />
   <link rel="stylesheet" href="css/winter.css?v=2" />
   <!-- Native (Capacitor) refinements — inert on the web -->
   <link rel="stylesheet" href="css/native.css?v=1" />
@@ -210,6 +210,7 @@
 
       <div class="bill-toggle">
         <button class="bt-opt active" data-interval="monthly">Monthly</button>
+        <button class="bt-opt" data-interval="quarterly">3 Months</button>
         <button class="bt-opt" data-interval="yearly">Yearly <span class="save">save 45%</span></button>
       </div>
 
@@ -467,7 +468,8 @@
       </ul>
       <div class="bill-toggle paywall-toggle">
         <button class="bt-opt active" data-interval="monthly">Monthly · <b id="pwMonthly"><s>$25</s> $19.99</b></button>
-        <button class="bt-opt" data-interval="yearly">Yearly · <b id="pwYearly">$99</b></button>
+        <button class="bt-opt" data-interval="quarterly">3 Months · <b id="pwQuarterly">$50</b></button>
+        <button class="bt-opt" data-interval="yearly">Yearly · <b id="pwYearly">$125</b></button>
       </div>
       <p class="trial-line">3 days free · No payment today</p>
       <button class="btn btn-glow btn-block btn-lg" id="paywallCheckout">Start My 3-Day Free Trial →</button>
@@ -486,6 +488,25 @@
       <p class="ec-pop-sub">Join Caloria Club and get 3 days of full Premium access on us.</p>
       <button class="btn btn-glow btn-block btn-lg" type="button" id="ecPopJoin">JOIN WITH 3 DAYS FREE TRIAL</button>
       <p class="ec-pop-fine">No payment today. Cancel anytime.</p>
+    </div>
+  </div>
+
+  <!-- ============== LUCKY WHEEL POPUP (new visitors, after ~5s) ============== -->
+  <div class="ec-pop-overlay hidden" id="lwPop" role="dialog" aria-modal="true" aria-labelledby="lwTitle">
+    <div class="ec-pop lw-card glass-strong">
+      <button class="ec-pop-close" id="lwClose" type="button" aria-label="Close">×</button>
+      <div id="lwIntro">
+        <span class="pill pill-aqua">A LITTLE GIFT 🎀</span>
+        <h3 id="lwTitle">WAIT! A little gift for you 🎀</h3>
+        <p class="ec-pop-sub">Spin the wheel and unlock your exclusive Caloria Club offer!</p>
+        <div class="lw-wheel-wrap">
+          <div class="lw-pointer" aria-hidden="true"></div>
+          <svg class="lw-wheel" id="lwWheel" viewBox="0 0 200 200" aria-hidden="true"></svg>
+        </div>
+        <button class="btn btn-glow btn-block btn-lg" type="button" id="lwSpin">SPIN THE WHEEL</button>
+        <p class="ec-pop-fine" id="lwOdds"></p>
+      </div>
+      <div id="lwResult" class="hidden"></div>
     </div>
   </div>
 
@@ -528,7 +549,8 @@
         </div>
         <div class="bill-toggle">
           <button class="bt-opt active" data-interval="monthly">Monthly · <b id="sgMonthly">$19.99</b></button>
-          <button class="bt-opt" data-interval="yearly">Yearly · <b id="sgYearly">$99</b></button>
+          <button class="bt-opt" data-interval="quarterly">3 Months · <b id="sgQuarterly">$50</b></button>
+          <button class="bt-opt" data-interval="yearly">Yearly · <b id="sgYearly">$125</b></button>
         </div>
         <p class="trial-line">3 days free · No payment today</p>
         <button class="btn btn-glow btn-block btn-lg" id="sgCheckout">Start My 3-Day Free Trial →</button>
@@ -1033,7 +1055,8 @@
           </ul>
           <div class="bill-toggle">
             <button class="bt-opt active" data-interval="monthly">Monthly · <b id="upMonthly"><s>$25</s> $19.99</b></button>
-            <button class="bt-opt" data-interval="yearly">Yearly · <b id="upYearly">$99</b></button>
+            <button class="bt-opt" data-interval="quarterly">3 Months · <b id="upQuarterly">$50</b></button>
+            <button class="bt-opt" data-interval="yearly">Yearly · <b id="upYearly">$125</b></button>
           </div>
           <p class="refund-notice">All purchases are final and non-refundable. Please review your subscription carefully before purchasing.</p>
           <button class="btn btn-primary btn-block btn-lg" id="checkoutBtn">Upgrade to Premium</button>
@@ -1116,6 +1139,7 @@
        the PUBLIC (logged-out) landing too, not just the logged-in app. -->
   <script src="js/seasonal.js?v=2"></script>
   <script src="js/winter.js?v=2"></script>
-  <script src="js/app.js?v=70"></script>
+  <script src="js/app.js?v=71"></script>
+  <script src="js/wheel.js?v=1"></script>
 </body>
 </html>

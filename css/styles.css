@@ -343,6 +343,28 @@ a { color: inherit; text-decoration: none; }
 .ec-pop-close { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 24px; line-height: 1; color: var(--ink-soft); cursor: pointer; }
 @media (max-width: 420px) { .ec-pop { padding: 24px 18px 20px; } .ec-pop h3 { font-size: 21px; } }
 
+/* ---- Lucky Wheel popup ---- */
+.lw-card { max-width: 400px; }
+.lw-card .pill { margin-bottom: 4px; }
+.lw-wheel-wrap { position: relative; width: 240px; height: 240px; margin: 14px auto 18px; }
+.lw-wheel { width: 100%; height: 100%; display: block; transform-origin: 50% 50%;
+  filter: drop-shadow(0 10px 22px rgba(42,34,48,.20)); border-radius: 50%;
+  background: #fff; }
+.lw-pointer { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); z-index: 2;
+  width: 0; height: 0; border-left: 13px solid transparent; border-right: 13px solid transparent;
+  border-top: 20px solid var(--rose-deep, #b03a66); filter: drop-shadow(0 2px 2px rgba(0,0,0,.18)); }
+.lw-win-pill { margin-bottom: 6px; }
+.lw-win-h { font-family: var(--font-head); font-size: 25px; color: var(--rose-deep); margin: 8px 0 4px; line-height: 1.15; }
+.lw-win-sub { color: var(--ink-soft); font-size: 14px; font-weight: 700; letter-spacing: .3px; margin: 0 0 12px; text-transform: uppercase; }
+.lw-win-price { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 0 0 10px; }
+.lw-win-price s { color: var(--ink-soft); font-size: 15px; }
+.lw-win-now { font-family: var(--font-head); font-size: 22px; font-weight: 800; color: var(--rose, #e36aa0); }
+.lw-win-terms { color: var(--ink-soft); font-size: 12.5px; line-height: 1.45; margin: 0 0 14px; }
+@media (max-width: 420px) {
+  .lw-wheel-wrap { width: 210px; height: 210px; }
+  .lw-win-h { font-size: 22px; }
+}
+
 /* Primary results CTA — sits directly under the macro card, above the benefits */
 .ob-join-cta { margin-top: 18px; }
 .ob-join-note { margin-top: 8px; text-align: center; color: var(--ink-soft); font-size: 12px; }
@@ -512,7 +534,7 @@ a { color: inherit; text-decoration: none; }
 .wo-meta { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: var(--ink-soft); background: rgba(255,255,255,.7); padding: 4px 12px; border-radius: 100px; box-shadow: inset 0 0 0 1.5px var(--blush); }
 .wo-complete-btn { margin-top: 4px; }
 .refund-notice { font-size: 12px; line-height: 1.45; color: var(--ink-soft); background: rgba(255,255,255,.55); border-radius: 12px; padding: 10px 12px; margin: 12px 0; text-align: center; box-shadow: inset 0 0 0 1.5px var(--blush); }
-/* (Retired Caloria Starter plan styles removed — pricing is $19.99/mo & $99/yr only.) */
+/* (Retired Caloria Starter plan styles removed — pricing is $19.99/mo, $50/3mo & $125/yr.) */
 .workout-history-block { margin-top: 22px; }
 .wh-title { font-size: 16px; margin-bottom: 10px; }
 .wh-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--glass-strong); box-shadow: var(--sh-sm); margin-bottom: 8px; }
