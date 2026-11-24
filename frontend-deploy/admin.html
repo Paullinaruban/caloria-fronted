@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
+<title>Caloria — Admin</title>
+<!-- iPhone Home Screen: opens fullscreen like an app, named "Caloria HQ" -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Caloria HQ" />
+<meta name="theme-color" content="#f6f8fb" />
+  <link rel="icon" href="/favicon.ico?v=1" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32.png?v=1" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=1" />
+<style>
+  :root { --ink:#1f2430; --muted:#76808f; --line:#e7eaf0; --bg:#f6f8fb; --card:#fff;
+    --rose:#f24d8c; --aqua:#2bb5c9; --warn:#e8a33d; --bad:#e5484d; --good:#2fa86b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 -apple-system,system-ui,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--card); border-bottom:1px solid var(--line); padding:14px 22px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:5; }
+  header h1 { font-size:17px; margin:0; letter-spacing:.02em; }
+  header .sub { color:var(--muted); font-size:13px; }
+  main { max-width:1120px; margin:0 auto; padding:20px; }
+  nav.tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; }
+  nav.tabs button { background:#fff; border:1px solid var(--line); color:var(--muted); padding:9px 16px; border-radius:100px; font-weight:600; cursor:pointer; }
+  nav.tabs button.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:18px; }
+  .card h2 { font-size:14px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 14px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .kpi { background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:15px; }
+  .kpi b { display:block; font-size:27px; line-height:1.1; }
+  .kpi b.big { font-size:32px; color:var(--good); }
+  .kpi span { color:var(--muted); font-size:13px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+  td.email { white-space:normal; }
+  .bar { position:relative; height:7px; background:var(--line); border-radius:6px; min-width:80px; overflow:hidden; margin-top:3px; }
+  .bar i { position:absolute; inset:0 auto 0 0; background:var(--aqua); }
+  .bar i.warn { background:var(--warn); } .bar i.bad { background:var(--bad); }
+  .tag { display:inline-block; font-size:11px; padding:2px 9px; border-radius:100px; font-weight:600; }
+  .tag.free { background:#eef1f6; color:var(--muted); } .tag.premium { background:#fde7f0; color:var(--rose); }
+  .tag.ok { background:#e3f5ec; color:var(--good); } .tag.warn { background:#fcf0db; color:#a96f1c; }
+  .tag.bad { background:#fde5e6; color:var(--bad); }
+  label { display:block; font-size:13px; color:var(--muted); margin:8px 0 4px; }
+  input,select,button.btn { font:inherit; padding:9px 11px; border-radius:9px; border:1px solid var(--line); background:#fff; color:var(--ink); }
+  button.btn { background:var(--ink); color:#fff; border:none; cursor:pointer; font-weight:600; }
+  button.btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  button.btn.sm { padding:5px 10px; font-size:12px; border-radius:7px; }
+  button.btn.danger { background:#fde5e6; color:var(--bad); }
+  button.btn.good { background:#e3f5ec; color:var(--good); }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+  .row > div { flex:1; min-width:120px; }
+  .msg { font-size:13px; margin-top:10px; }
+  .msg.err { color:var(--bad); } .msg.ok { color:var(--good); }
+  .hidden { display:none; }
+  .muted { color:var(--muted); }
+  .scroll { overflow-x:auto; }
+  /* AI dashboard */
+  .ai-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .ai-controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .ai-controls label { margin:0; display:flex; align-items:center; gap:5px; }
+  .ai-controls input[type=date], .ai-controls select { padding:7px 9px; }
+  .ai-controls .chk { color:var(--ink); font-size:13px; }
+  .ai-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:900px){ .ai-grid2 { grid-template-columns:1fr; } }
+  .chart { display:flex; flex-direction:column; gap:6px; }
+  .chart .row2 { display:grid; grid-template-columns:130px 1fr 70px; align-items:center; gap:8px; font-size:12px; }
+  .chart .cbar { height:16px; background:var(--aqua); border-radius:4px; min-width:2px; }
+  .chart .cbar.m1{background:#6c8cff}.chart .cbar.m2{background:#27c2a0}.chart .cbar.m3{background:#f2a13d}.chart .cbar.m4{background:#e0719b}
+  .chart .clbl { color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chart .cval { text-align:right; font-variant-numeric:tabular-nums; }
+  th.sortable { cursor:pointer; user-select:none; } th.sortable:hover { color:var(--ink); }
+  th.sortable .arr { opacity:.5; font-size:10px; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  #loginCard { max-width:380px; margin:60px auto; }
+  /* iPhone: 16px inputs stop Safari's auto-zoom on focus; roomier touch targets. */
+  @media (max-width: 640px) {
+    input, select, textarea, button.btn { font-size:16px; }
+    nav.tabs button { padding:10px 14px; }
+    main { padding:14px; }
+    header { padding:12px 14px; }
+  }
+  .detail dl { display:grid; grid-template-columns:auto 1fr; gap:6px 16px; margin:0; font-size:14px; }
+  .detail dt { color:var(--muted); }
+  .pillrow { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+  .spark { display:flex; align-items:flex-end; gap:6px; height:70px; }
+  .spark .b { flex:1; background:var(--aqua); border-radius:4px 4px 0 0; min-height:3px; position:relative; }
+  .spark .b span { position:absolute; top:-18px; left:0; right:0; text-align:center; font-size:11px; color:var(--muted); }
+  .spark .lbl { font-size:10px; color:var(--muted); text-align:center; margin-top:4px; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Caloria Admin</h1><div class="sub">Business monitoring &amp; support — not visible to users</div></div>
+  <button class="btn ghost" id="logoutBtn" style="display:none">Sign out</button>
+</header>
+<main>
+  <div class="card" id="loginCard">
+    <h2 id="loginTitle">Admin sign in</h2>
+    <form id="loginForm">
+      <label>Email</label><input id="email" type="email" autocomplete="username" style="width:100%" required />
+      <label>Password</label><input id="password" type="password" autocomplete="current-password" style="width:100%" required minlength="6" />
+      <div id="adminCaptcha" style="margin-top:14px"></div>
+      <div style="margin-top:14px"><button class="btn" id="loginBtn" type="submit" style="width:100%">Sign in</button></div>
+    </form>
+    <div class="msg" id="loginMsg"></div>
+    <p class="muted" style="font-size:13px;margin-top:12px">First time on this deployment?
+      <a href="#" id="loginModeToggle">Create your admin account</a></p>
+  </div>
+
+  <div id="app" class="hidden">
+    <nav class="tabs" id="tabs">
+      <button data-tab="business" class="active">Business</button>
+      <button data-tab="club">Caloria Club</button>
+      <button data-tab="users">Users</button>
+      <button data-tab="subs">Subscriptions</button>
+      <button data-tab="leads">Leads</button>
+      <button data-tab="community">Community</button>
+      <button data-tab="analytics">Analytics</button>
+      <button data-tab="usage">Usage &amp; alerts</button>
+      <button data-tab="aicost">AI Cost</button>
+    </nav>
+
+    <!-- BUSINESS -->
+    <section data-panel="business">
+      <div class="card">
+        <h2>At a glance <span class="muted" id="bizPeriod"></span></h2>
+        <div class="kpis" id="bizKpis"></div>
+      </div>
+      <div class="card"><h2>Most active members</h2><div id="bizActive" class="scroll"></div></div>
+      <div class="card"><h2>Members approaching internal limits</h2><div id="bizApproach" class="scroll"></div></div>
+    </section>
+
+    <!-- CALORIA CLUB (founding members) -->
+    <section data-panel="club" class="hidden">
+      <div class="card">
+        <h2>System status <span class="muted" id="clubHealthTime"></span>
+          <button class="btn ghost sm" id="clubHealthRefresh" style="float:right">Refresh</button></h2>
+        <div class="kpis" id="clubHealth"></div>
+      </div>
+
+      <div class="card">
+        <h2>Waitlist analytics <span class="muted" id="clubPeriod"></span></h2>
+        <div class="kpis" id="clubKpis"></div>
+        <h3 class="muted" style="margin:16px 0 20px 0">Daily signups — last 14 days</h3>
+        <div class="spark" id="clubGrowth"></div>
+        <div id="clubGrowthLbls" style="display:flex;gap:6px"></div>
+      </div>
+
+      <div class="card">
+        <h2>What members told us <span class="muted">· founding onboarding answers</span></h2>
+        <div class="ai-grid2">
+          <div><h3 class="muted" style="margin:0 0 8px">Biggest wellness goal</h3><div class="chart" id="clubAnsGoal"></div>
+            <h3 class="muted" style="margin:16px 0 8px">Biggest struggle</h3><div class="chart" id="clubAnsStruggle"></div></div>
+          <div><h3 class="muted" style="margin:0 0 8px">Most excited about</h3><div class="chart" id="clubAnsExcited"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Launch campaigns <span class="muted">· pre-written, branded emails to every subscribed member</span></h2>
+        <div class="row" style="align-items:stretch">
+          <div style="flex:1;border:1px solid var(--line);border-radius:12px;padding:14px">
+            <b style="font-size:15px">✨ Tomorrow.</b>
+            <p class="muted" style="font-size:13px;margin:4px 0 12px">Teaser — “Your Early Access is almost here.” Sends everyone to the waitlist.</p>
+            <button class="btn" id="campTomorrow" style="width:100%">Send “Tomorrow” Email</button>
+          </div>
+          <div style="flex:1;border:1px solid var(--line);border-radius:12px;padding:14px">
+            <b style="font-size:15px">✨ Your invitation is here.</b>
+            <p class="muted" style="font-size:13px;margin:4px 0 12px">Early Access — opens the doors and links to the live Caloria Club.</p>
+            <button class="btn good" id="campEarly" style="width:100%">Send “Early Access” Email</button>
+          </div>
+          <div style="flex:1;border:1px solid #ffd7e7;border-radius:12px;padding:14px;background:#fff8fb">
+            <b style="font-size:15px">⏳ Follow-up Early Access</b>
+            <p class="muted" style="font-size:13px;margin:4px 0 12px">Reminder for members who missed the first email — “check Spam/Promotions, your invitation is waiting, closes July 15.”</p>
+            <button class="btn ghost sm" id="campFollowupTest" style="width:100%;margin-bottom:6px">Send Test Email (to me)</button>
+            <button class="btn ghost sm" id="campFollowupPreview" style="width:100%;margin-bottom:6px">Preview</button>
+            <button class="btn good" id="campFollowupSend" style="width:100%">Send to Waitlist</button>
+          </div>
+        </div>
+        <div class="msg" id="campMsg"></div>
+
+        <!-- Follow-up campaign preview (exact HTML members receive) -->
+        <div id="campFollowupPreviewWrap" class="hidden" style="margin-top:14px">
+          <div class="row" style="align-items:center;margin-bottom:8px">
+            <div style="flex:0"><b id="campFollowupSubject" style="font-size:14px"></b></div>
+            <div style="flex:0;margin-left:auto">
+              <button class="btn ghost sm" id="campFollowupPvDesktop">Desktop</button>
+              <button class="btn ghost sm" id="campFollowupPvMobile">Mobile</button>
+              <button class="btn ghost sm" id="campFollowupPvClose">Close</button>
+            </div>
+          </div>
+          <iframe id="campFollowupFrame" title="Follow-up email preview" style="width:100%;max-width:640px;height:620px;border:1px solid var(--line);border-radius:12px;background:#fff;display:block;margin:0 auto"></iframe>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Send a founder update <span class="muted">· via Resend · free-form message to a chosen segment</span></h2>
+        <label>Send to</label>
+        <select id="cuAudience" style="width:100%">
+          <option value="all">All members</option>
+          <option value="referrers">Top referrers (1+ referrals)</option>
+          <option value="first_100">First 100 members</option>
+          <option value="first_1000">First 1,000 members</option>
+          <option value="invited">Invited members (joined via referral)</option>
+        </select>
+        <label>Subject</label>
+        <input id="cuSubject" placeholder="e.g. A first look inside Caloria 🤍" style="width:100%" />
+        <label>Message <span class="muted">(blank line = new paragraph; wrapped in the branded Caloria template with your signature + unsubscribe link)</span></label>
+        <textarea id="cuMessage" rows="8" style="width:100%;font:inherit;padding:9px 11px;border-radius:9px;border:1px solid var(--line)" placeholder="Hi lovely,&#10;&#10;Here's what we've been building for you this week…"></textarea>
+        <div class="muted" style="font-size:12px;margin-top:6px">
+          Personalization tags: <code>{{position}}</code> <code>{{referral_count}}</code> <code>{{referral_link}}</code> <code>{{referral_code}}</code> <code>{{email}}</code>
+          — e.g. “You're Founding Member №{{position}}”.
+          <span id="cuDraftNote" style="float:right"></span>
+        </div>
+        <div class="row" style="margin-top:12px;align-items:center">
+          <div style="flex:0"><button class="btn ghost" id="cuPreview">Preview</button></div>
+          <div style="flex:0"><button class="btn ghost" id="cuTest">Send test to me</button></div>
+          <div style="flex:0"><button class="btn" id="cuSend">Send campaign…</button></div>
+          <div class="msg" id="cuMsg" style="margin-top:0"></div>
+        </div>
+        <div id="cuPreviewWrap" class="hidden" style="margin-top:14px">
+          <div class="row" style="align-items:center;margin-bottom:8px">
+            <div style="flex:0"><b id="cuPreviewSubject" style="font-size:14px"></b></div>
+            <div style="flex:0;margin-left:auto">
+              <button class="btn ghost sm" id="cuPvDesktop">Desktop</button>
+              <button class="btn ghost sm" id="cuPvMobile">Mobile</button>
+              <button class="btn ghost sm" id="cuPvClose">Close</button>
+            </div>
+          </div>
+          <iframe id="cuPreviewFrame" title="Email preview" style="width:100%;max-width:640px;height:560px;border:1px solid var(--line);border-radius:12px;background:#fff;display:block;margin:0 auto"></iframe>
+        </div>
+        <div style="margin-top:16px" id="cuHistoryWrap"><h2 style="margin-bottom:10px">Campaign history</h2><div class="scroll" id="cuHistory"></div></div>
+        <p class="muted" style="font-size:12px;margin-top:8px">Delivered/failed counts are tracked here. Opens, bounces and spam reports are in your <a href="https://resend.com/emails" target="_blank" rel="noopener">Resend dashboard</a>.</p>
+      </div>
+
+      <div class="card">
+        <h2>Members</h2>
+        <div class="row">
+          <div style="flex:3"><label>Search by email</label><input id="clubSearch" placeholder="type to search…" style="width:100%" /></div>
+          <div><label>Joined</label>
+            <select id="clubSince" style="width:100%">
+              <option value="0">All time</option>
+              <option value="1">Today</option>
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+            </select></div>
+          <div><label>Min referrals</label><input id="clubMinRef" type="number" min="0" placeholder="0" style="width:100%" /></div>
+          <div style="flex:0"><label style="white-space:nowrap"><input type="checkbox" id="clubInvited" /> Invited only</label></div>
+          <div style="flex:0"><button class="btn" id="clubSearchBtn">Apply</button></div>
+          <div style="flex:0"><button class="btn ghost" id="clubCsv">Export CSV</button></div>
+          <div style="flex:0"><button class="btn ghost" id="clubCopyEmails">Copy emails</button></div>
+          <div style="flex:0"><button class="btn good" id="clubResendWelcomes" style="display:none"></button></div>
+        </div>
+        <div class="msg" id="clubMembersMsg"></div>
+        <div class="scroll" id="clubMembers" style="margin-top:14px"></div>
+      </div>
+
+      <div class="card"><h2>Referral leaderboard</h2><div class="scroll" id="clubBoard"></div></div>
+    </section>
+
+    <!-- USERS -->
+    <section data-panel="users" class="hidden">
+      <div class="card">
+        <h2>User management</h2>
+        <div class="row">
+          <div style="flex:3"><label>Search by email or name</label><input id="userSearch" placeholder="type to search…" style="width:100%" /></div>
+          <div style="flex:0"><button class="btn" id="userSearchBtn">Search</button></div>
+        </div>
+        <div class="scroll" id="userList" style="margin-top:14px"></div>
+      </div>
+      <div class="card hidden" id="userDetailCard">
+        <h2>User profile</h2>
+        <div class="detail" id="userDetail"></div>
+        <div class="msg" id="userMsg"></div>
+      </div>
+    </section>
+
+    <!-- SUBSCRIPTIONS -->
+    <section data-panel="subs" class="hidden">
+      <div class="card"><h2>Active subscriptions</h2><div class="scroll" id="subsActive"></div></div>
+      <div class="card"><h2>Past due (failed payment, in grace)</h2><div class="scroll" id="subsPastDue"></div></div>
+      <div class="card"><h2>Cancelled</h2><div class="scroll" id="subsCanceled"></div></div>
+      <div class="card"><h2>Recent failed payments</h2><div class="scroll" id="subsFailed"></div></div>
+    </section>
+
+    <!-- COMMUNITY (moderation) -->
+    <section data-panel="community" class="hidden">
+      <div class="card">
+        <h2>Community moderation <span class="muted">· newest first · deleting is permanent</span>
+          <button class="btn ghost sm" id="commRefresh" style="float:right">Refresh</button></h2>
+        <div class="kpis" id="commKpis"></div>
+      </div>
+      <div class="card"><h2>Posts <span class="muted" id="commPostCount"></span></h2><div class="scroll" id="commPosts"></div></div>
+      <div class="card"><h2>Comments <span class="muted" id="commCommentCount"></span></h2><div class="scroll" id="commComments"></div></div>
+      <div class="msg" id="commMsg"></div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section data-panel="analytics" class="hidden">
+      <div class="card"><h2>Key metrics <span class="muted" id="anPeriod"></span></h2><div class="kpis" id="anKpis"></div></div>
+      <div class="card"><h2>New users — last 6 months</h2><div class="spark" id="anGrowth"></div><div id="anGrowthLbls" style="display:flex;gap:6px"></div></div>
+    </section>
+
+    <!-- LEADS & CONVERSION -->
+    <section data-panel="leads" class="hidden">
+      <div class="card"><h2>Leads &amp; conversion <span class="muted" id="ldMode"></span>
+        <button class="btn ghost sm" id="ldRefresh" style="float:right">Refresh</button></h2>
+        <div class="kpis" id="ldKpis"></div>
+      </div>
+      <div class="card">
+        <h2>Lead records</h2>
+        <div class="row" style="margin-bottom:10px">
+          <input id="ldSearch" placeholder="Search by email…" style="flex:1">
+          <div style="flex:0"><button class="btn" id="ldSearchBtn">Search</button></div>
+        </div>
+        <div id="ldTable" class="muted">Loading…</div>
+      </div>
+    </section>
+
+    <!-- USAGE & ALERTS -->
+    <section data-panel="usage" class="hidden">
+      <div class="card">
+        <h2>Manual override</h2>
+        <div class="row">
+          <div><label>User email</label><input id="ovEmail" type="email" style="width:100%" /></div>
+          <div><label>Action</label>
+            <select id="ovAction" style="width:100%">
+              <option value="set_limit">Set monthly allowance (persistent)</option>
+              <option value="grant_bonus">Grant bonus (this month only)</option>
+              <option value="reset_usage">Reset this month's usage</option>
+              <option value="snapshot">View usage snapshot</option>
+            </select>
+          </div>
+          <div><label id="lblScans">Scans</label><input id="ovScans" type="number" min="0" style="width:100%" /></div>
+          <div><label id="lblCoach">Coach</label><input id="ovCoach" type="number" min="0" style="width:100%" /></div>
+          <div style="flex:0"><button class="btn" id="ovBtn">Apply</button></div>
+        </div>
+        <div class="msg" id="ovMsg"></div>
+      </div>
+      <div class="card"><h2>All members — usage this month</h2><div class="scroll" id="usageAll"></div></div>
+      <div class="card"><h2>Recent owner alerts</h2><div class="scroll" id="alertsBox"></div></div>
+    </section>
+
+    <!-- ================= AI COST & ANALYTICS ================= -->
+    <section data-panel="aicost" class="hidden">
+      <div class="card">
+        <div class="ai-toolbar">
+          <h2 style="margin:0">OpenAI Analytics <span class="muted" id="aiLive"></span></h2>
+          <div class="ai-controls">
+            <label>From <input type="date" id="aiStart"></label>
+            <label>To <input type="date" id="aiEnd"></label>
+            <select id="aiKind">
+              <option value="all">All endpoints</option>
+              <option value="scan_vision">Scan · vision</option>
+              <option value="scan_text">Scan · text</option>
+              <option value="coach">Coach</option>
+            </select>
+            <button class="btn" id="aiRefresh">Refresh</button>
+            <label class="chk"><input type="checkbox" id="aiAuto"> Auto (30s)</label>
+            <button class="btn ghost" id="aiCsv">Export CSV</button>
+          </div>
+        </div>
+        <div class="kpis" id="aiKpis"></div>
+      </div>
+
+      <div class="ai-grid2">
+        <div class="card"><h2>Daily cost — last 30 days</h2><div id="aiDayChart" class="chart"></div></div>
+        <div class="card"><h2>Cost by model</h2><div id="aiModelChart" class="chart"></div>
+          <h2 style="margin-top:16px">Cost by endpoint</h2><div id="aiKindChart" class="chart"></div></div>
+      </div>
+
+      <div class="ai-grid2">
+        <div class="card"><h2>Performance</h2><div class="kpis" id="aiPerf"></div>
+          <h3 class="muted" style="margin:14px 0 6px">Slowest requests</h3><div class="scroll" id="aiSlowest"></div></div>
+        <div class="card"><h2>Users</h2><div class="kpis" id="aiUserKpis"></div>
+          <h3 class="muted" style="margin:14px 0 6px">Most active users</h3><div class="scroll" id="aiActive"></div></div>
+      </div>
+
+      <div class="card"><h2>Top 20 most expensive requests</h2><div class="scroll" id="aiTop20"></div></div>
+
+      <div class="card">
+        <h2>Request log <span class="muted" id="aiLogCount"></span></h2>
+        <input id="aiSearch" placeholder="filter by email / model / endpoint…" style="width:100%;margin-bottom:10px" />
+        <div class="scroll" id="aiLog"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="config.js?v=2"></script>
+<script src="js/admin.js?v=6"></script>
+</body>
+</html>

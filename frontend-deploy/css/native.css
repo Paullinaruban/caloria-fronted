@@ -1,0 +1,82 @@
+/* ============================================================================
+ * Caloria — native (Capacitor) refinements
+ * Only applies when running inside the native app (html.native), so the web
+ * site is completely unaffected. Loaded AFTER styles.css.
+ * ==========================================================================*/
+
+/* Elements that must appear ONLY inside the native app (e.g. Apple's required
+   Restore Purchases + legal links). Hidden on the website. */
+.native-only { display: none; }
+html.native .native-only { display: block; }
+html.native .iap-extra { margin-top: 6px; text-align: center; }
+html.native .sub-gate-restore {
+  background: none; border: 0; color: inherit; opacity: .8;
+  font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer;
+  padding: 8px 12px; min-height: 44px; /* Apple 44pt touch target */
+}
+html.native .iap-legal { margin: 2px 0 0; font-size: 12px; }
+html.native .iap-legal a { color: inherit; text-decoration: underline; }
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --kb-height: 0px;
+}
+
+/* Prevent the whole app from being pulled by iOS rubber-band / overscroll and
+   disable long-press text callouts that feel un-native. */
+html.native,
+html.native body {
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+html.native body {
+  -webkit-touch-callout: none;
+}
+
+/* --- Safe areas ----------------------------------------------------------- */
+/* Full-screen fixed overlays must clear the Dynamic Island / notch (top) and
+   the Home Indicator (bottom). These already exist in the app; we just pad. */
+html.native .sub-gate {
+  padding-top: calc(44px + var(--safe-top));
+  padding-bottom: calc(44px + var(--safe-bottom));
+}
+html.native .modal-overlay {
+  padding-top: calc(20px + var(--safe-top));
+  padding-bottom: calc(20px + var(--safe-bottom));
+}
+
+/* Sticky top chrome: keep it clear of the status bar / island. (Native already
+   insets the WebView, so this is belt-and-suspenders for edge cases.) */
+html.native .nav,
+html.native .app-nav {
+  padding-top: max(14px, var(--safe-top));
+}
+
+/* The bottom tab bar already respects env(safe-area-inset-bottom); nothing to
+   add here — but the toast should ride above the Home Indicator + tab bar. */
+html.native .toast {
+  bottom: calc(110px + var(--safe-bottom));
+}
+
+/* --- Keyboard ------------------------------------------------------------- */
+/* Keyboard resize is 'native', so the WebView shrinks and fixed bottom UI moves
+   up automatically. When the keyboard is open we drop the fixed tab bar so it
+   doesn't sit on top of the field, and lift the toast above the keyboard. */
+html.native.kb-open .tabbar {
+  transform: translateX(-50%) translateY(120%);
+}
+html.native.kb-open .toast {
+  bottom: calc(20px + var(--kb-height));
+}
+
+/* Inputs get comfortable scroll margin so scrollIntoView never tucks them under
+   a sticky header. */
+html.native input,
+html.native textarea,
+html.native select {
+  scroll-margin-top: calc(var(--safe-top) + 72px);
+  scroll-margin-bottom: calc(var(--kb-height) + 24px);
+}

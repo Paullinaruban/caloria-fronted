@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffeaf3" />
+  <meta name="robots" content="noindex" />
+  <title>Welcome to Caloria Club — You're a Founding Member</title>
+  <meta name="description" content="You're officially one of Caloria's Founding Members — joining before public launch with exclusive founding benefits." />
+
+  <!-- Social sharing (members share their founder page) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Caloria" />
+  <meta property="og:title" content="I'm a Caloria Club Founding Member 🤍" />
+  <meta property="og:description" content="I'm one of the very first women shaping the future of wellness. Join me before public launch." />
+  <meta property="og:image" content="https://caloriaclub.com/assets/founder.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="/favicon.ico?v=1" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/icon-32.png?v=1" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=1" />
+
+  <link rel="stylesheet" href="css/fonts.css" />
+  <link rel="stylesheet" href="css/styles.css?v=39" />
+</head>
+<body>
+
+  <header class="nav glass">
+    <a class="brand" href="/">
+      <img class="brand-logo" src="/assets/mascot-sm.png?v=1" alt="Caloria mascot" /><span class="brand-name">Caloria</span>
+    </a>
+  </header>
+
+  <!-- Missing / unknown membership fallback -->
+  <main class="club-success hidden" id="clubMissing">
+    <div class="cs-card glass-strong">
+      <span class="pill club-pill">✦ Caloria Club</span>
+      <h1 class="cs-title">Your founding place is waiting.</h1>
+      <p class="cs-sub">We couldn't find your membership on this device. Join the Caloria Club — it takes ten seconds.</p>
+      <a class="btn btn-glow btn-lg" href="/#club">Become a Founding Member</a>
+    </div>
+  </main>
+
+  <!-- Success experience -->
+  <main class="club-success hidden" id="clubSuccess">
+    <div class="cs-sparkles" aria-hidden="true">
+      <span>✦</span><span>✧</span><span>✦</span><span>✧</span><span>✦</span><span>✧</span><span>✦</span><span>✧</span><span>✦</span><span>✧</span>
+    </div>
+
+    <div class="cs-card glass-strong">
+      <div class="cs-badge" id="csBadge">
+        <span class="cs-badge-crown">👑</span>
+        <span class="cs-badge-label">Founding Member</span>
+        <span class="cs-badge-num" id="csBadgeNum">№—</span>
+      </div>
+
+      <h1 class="cs-title">🩵 You’re officially a<br>Founding Member.</h1>
+      <p class="cs-sub">You’re one of the very first girls helping build Caloria from day one.</p>
+      <div class="cs-letter">
+        <p>Check your inbox — I just sent you a personal letter.</p>
+        <p>I’ll see you there.</p>
+        <p class="cs-letter-sign">Love,<br><span>Paullina Ruban</span> 🫶</p>
+      </div>
+
+      <div class="cs-stats">
+        <div class="cs-stat"><b id="csPosition">—</b><span>Your position</span></div>
+        <div class="cs-stat cs-stat-mid"><b id="csReferrals">0</b><span>Friends invited</span></div>
+        <div class="cs-stat"><b id="csTotal">—</b><span>Founding members</span></div>
+      </div>
+
+      <div class="cs-refer">
+        <p class="cs-refer-head">Move up the founders list ✨</p>
+        <p class="cs-refer-sub">Every friend who joins with your link lifts you higher — closer to the front of the line on launch day.</p>
+        <div class="cs-link-row">
+          <input class="cs-link" id="csLink" readonly value="" aria-label="Your personal invite link" />
+          <button class="btn btn-primary cs-copy" id="csCopy">Copy Link</button>
+        </div>
+        <div class="cs-share">
+          <button class="cs-share-btn" id="csInstagram"><span>📸</span>Instagram</button>
+          <button class="cs-share-btn" id="csTiktok"><span>🎵</span>TikTok</button>
+          <button class="cs-share-btn" id="csShare"><span>💌</span>Share</button>
+        </div>
+      </div>
+
+      <div class="cs-benefits">
+        <p class="cs-benefits-head">Your founding benefits</p>
+        <ul>
+          <li>✨ Lifetime Founding Price — locked in forever</li>
+          <li>🚀 Early Access — inside before public launch</li>
+          <li>💎 First Access to Every New Feature</li>
+          <li>👑 Exclusive Founding Member Badge</li>
+        </ul>
+      </div>
+
+      <p class="cs-note">Founder updates land in your inbox first — behind-the-scenes progress, first looks, and your private early-access invitation before the doors open. 🤍</p>
+    </div>
+
+    <p class="cs-footer">◍ Caloria · Made by <strong>Paullina Ruban</strong></p>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <script src="config.js?v=live1"></script>
+  <script src="js/analytics.js?v=1"></script>
+  <script src="js/club.js?v=4"></script>
+</body>
+</html>
