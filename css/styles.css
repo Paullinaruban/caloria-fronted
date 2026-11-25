@@ -108,6 +108,12 @@ a { color: inherit; text-decoration: none; }
 .hero-highlights { list-style: none; margin: 22px 0 26px; display: flex; flex-direction: column; gap: 9px; }
 .hero-highlights li { font-size: 15px; font-weight: 600; color: var(--ink); }
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+/* Hero: primary CTA is the dominant focus; secondary sits directly beneath it. */
+.hero-actions-stacked { flex-direction: column; align-items: flex-start; gap: 14px; }
+.btn-hero { width: 100%; max-width: 440px; padding: 22px 54px; font-size: 21px; font-weight: 800;
+  letter-spacing: .015em; border-radius: 100px; box-shadow: 0 14px 40px rgba(242,77,140,.45); }
+.btn-hero:hover { transform: translateY(-2px); box-shadow: 0 20px 54px rgba(242,77,140,.55); }
+.btn-hero-secondary { width: 100%; max-width: 440px; padding: 11px 22px; font-size: 14px; font-weight: 700; }
 .hero-trust { display: flex; align-items: center; gap: 10px; margin-top: 26px; font-size: 14px; color: var(--ink-soft); }
 .stars { color: #ffb13d; letter-spacing: 2px; }
 
@@ -741,6 +747,7 @@ a { color: inherit; text-decoration: none; }
   .hero-inner { grid-template-columns: 1fr; text-align: center; }
   .hero-copy { order: 2; } .hero-art { order: 1; }
   .lede, .hero-actions, .hero-trust { margin-left: auto; margin-right: auto; justify-content: center; }
+  .hero-actions-stacked { align-items: center; }
   .nav-links { display: none; }
   .pain-grid { grid-template-columns: 1fr 1fr; }
   .steps, .feature-grid { grid-template-columns: 1fr; }
